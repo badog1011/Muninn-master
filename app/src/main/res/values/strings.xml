@@ -1,0 +1,61 @@
+<resources>
+    <string name="app_name">Muninn</string>
+    <string name="select_photo_string">選擇影像</string>
+    <string name="select_zip_string">選擇存檔</string>
+    <string name="setting_label">Setting</string>
+    <string name="setting_string">參數設定</string>
+    <string name="save_string">儲存草圖</string>
+    <string name="sign_string">簽名</string>
+    <string name="upload_string">上傳</string>
+    <string name="setting_size_fragment_title_string">尺寸設定</string>
+    <string name="setting_color_fragment_title_string">顏色設定</string>
+    <string name="setting_size_fragment_summary_string">繪圖內各種元素之尺寸設定</string>
+    <string name="setting_color_fragment_summary_string">繪圖內各種元素之顏色設定</string>
+
+    <string name="key_marker_point_radius">marker_point_radius</string>
+    <string name="key_marker_line_width">marker_line_width</string>
+    <string name="key_marker_text_size">marker_text_size</string>
+    <string name="key_marker_selection_radius">marker_selection_radius</string>
+
+    <string name="default_marker_point_radius">10.0</string>
+    <string name="default_marker_line_width">7.5</string>
+    <string name="default_marker_text_size">20.0</string>
+    <string name="default_marker_selection_radius">10.0</string>
+
+    <string name="key_marker_point_color">marker_point_color</string>
+    <string name="default_marker_point_color">#000000</string>
+
+    <string name="key_marker_line_color">marker_line_color</string>
+    <string name="default_marker_line_color">#000000</string>
+
+    <string name="key_marker_text_color">marker_text_color</string>
+    <string name="default_marker_text_color">#000000</string>
+
+    <string name="key_marker_selecting_color">marker_selecting_color</string>
+    <string name="default_marker_selecting_color">#FF0000</string>
+
+    <string name="key_marker_selected_color">marker_selected_color</string>
+    <string name="default_marker_selected_color">#AA0000</string>
+
+    <string-array name="color_name">
+        <item>黑</item>
+        <item>白</item>
+        <item>紅</item>
+        <item>藍</item>
+        <item>綠</item>
+        <item>深紅</item>
+        <item>深藍</item>
+        <item>深綠</item>
+    </string-array>
+
+    <string-array name="color">
+        <item>#000000</item>
+        <item>#FFFFFF</item>
+        <item>#FF0000</item>
+        <item>#0000FF</item>
+        <item>#00FF00</item>
+        <item>#AA0000</item>
+        <item>#0000AA</item>
+        <item>#00AA00</item>
+    </string-array>
+</resources>

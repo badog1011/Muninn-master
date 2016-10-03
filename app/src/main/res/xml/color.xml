@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <ListPreference
+        android:key="@string/key_marker_point_color"
+        android:title="標記點顏色"
+        android:entries="@array/color_name"
+        android:entryValues="@array/color" />
+
+    <ListPreference
+        android:key="@string/key_marker_line_color"
+        android:title="標記線條顏色"
+        android:entries="@array/color_name"
+        android:entryValues="@array/color" />
+
+    <ListPreference
+        android:key="@string/key_marker_text_color"
+        android:title="標記文字顏色"
+        android:entries="@array/color_name"
+        android:entryValues="@array/color" />
+
+    <ListPreference
+        android:key="@string/key_marker_selecting_color"
+        android:title="標記預選顏色"
+        android:entries="@array/color_name"
+        android:entryValues="@array/color" />
+
+    <ListPreference
+        android:key="@string/key_marker_selected_color"
+        android:title="標記選取顏色"
+        android:entries="@array/color_name"
+        android:entryValues="@array/color" />
+</PreferenceScreen>

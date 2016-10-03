@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<preference-headers xmlns:android="http://schemas.android.com/apk/res/android">
+    <header android:fragment="studio.bachelor.muninn.SettingActivity$SizeSettings"
+        android:title="@string/setting_size_fragment_title_string"
+        android:summary="@string/setting_size_fragment_summary_string" />
+
+    <header android:fragment="studio.bachelor.muninn.SettingActivity$ColorSettings"
+        android:title="@string/setting_color_fragment_title_string"
+        android:summary="@string/setting_color_fragment_summary_string" />
+
+    <header android:fragment="studio.bachelor.muninn.SettingActivity$ServerSettings"
+        android:title="伺服器設定"
+        android:summary="變更欲上傳伺服器之設定" />
+</preference-headers>
