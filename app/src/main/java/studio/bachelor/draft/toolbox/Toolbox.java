@@ -18,7 +18,7 @@ public class Toolbox{
     }
     public enum Tool {
         DELETER, MAKER_TYPE_LINK, MAKER_TYPE_ANCHOR, MARKER_TYPE_LABEL,
-        PATH_MODE, CLEAR_PATH, EDIT_UNDO, EDIT_NEXT
+        PATH_MODE, CLEAR_PATH, EDIT_UNDO, EDIT_REDO
     }
 
     public final ArrayList<Tool> tools = new ArrayList<>(Arrays.asList(Tool.values()));
