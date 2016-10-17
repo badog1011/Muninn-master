@@ -7,24 +7,20 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.AlertDialog;
 import android.text.InputType;
 import android.util.Log;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -39,7 +35,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -60,9 +55,11 @@ import studio.bachelor.draft.marker.builder.LinkMarkerBuilder;
 import studio.bachelor.draft.marker.builder.MeasureMarkerBuilder;
 import studio.bachelor.draft.toolbox.Toolbox;
 import studio.bachelor.draft.utility.BitmapMD5Encoder;
+import studio.bachelor.draft.utility.DataStepByStep;
 import studio.bachelor.draft.utility.MapString;
 import studio.bachelor.draft.utility.Position;
 import studio.bachelor.draft.utility.Renderable;
+import studio.bachelor.draft.utility.Selectable;
 import studio.bachelor.draft.utility.SignPad;
 import studio.bachelor.draft.utility.renderer.DraftRenderer;
 import studio.bachelor.draft.utility.renderer.RendererManager;
@@ -75,11 +72,15 @@ import studio.bachelor.utility.FTPUploader;
  * Created by BACHELOR on 2016/02/24.
  */
 public class DraftDirector {
+    private final String TAG = "DraftDirector";
     public static final DraftDirector instance = new DraftDirector();
     private Draft draft;
     private DraftRenderer draftRenderer;
     private RendererManager rendererManager;
     private Map<Object, Renderable> renderableMap = new HashMap<Object, Renderable>();
+    public LinkedList<Marker> RedoTempLL = new LinkedList<Marker>();
+    public static LinkedList<DataStepByStep> StepByStepUndo = new LinkedList<DataStepByStep>();
+    public static LinkedList<DataStepByStep> StepByStepRedo = new LinkedList<DataStepByStep>();
     private final Toolbox toolbox = Toolbox.getInstance();
     private ToolboxRenderer toolboxRenderer;
     private Type markerType = MeasureMarker.class;
@@ -130,7 +131,7 @@ public class DraftDirector {
             Log.d("DraftRenderer", "setBirdview(Uri uri)" + e.toString());
         }
         draftRenderer.setBirdview(birdview);
-        draft.setWidth(birdview.getWidth());
+        draft.setWidth(birdview.getWidth()); //setting the width-size of draft according to the birdview.
         draft.setHeight(birdview.getHeight());
     }
 
@@ -142,7 +143,7 @@ public class DraftDirector {
         toolboxRenderer = new ToolboxRenderer(toolbox, upper_left_corner, width, height);
     }
 
-    public void createPathIfPathMode(Position position) {
+    public void createPathIfPathMode(Position position) { //curve
         if (tool == Toolbox.Tool.PATH_MODE) {
             draft.createPathIfPathMode(position);
         }
@@ -190,6 +191,12 @@ public class DraftDirector {
                         ((LabelMarker) marker).setLabel(label_str);
                     }
                 })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        ((LabelMarker) marker).remove();
+                    }
+
+                })
                 .show();
 
         draft.addMarker(marker);
@@ -206,12 +213,121 @@ public class DraftDirector {
 
         //  建立對應關係
         renderableMap.put(marker, marker_renderer);
+
+        StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.CREATE));
+    }
+
+    private void addLabelMarkerRedo(DataStepByStep data) {
+        Marker tMarker = data.getMarker();
+        Selectable.CRUD state = data.getCRUDstate();
+        Position primitive = new Position(tMarker.refreshed_tap_position.x, tMarker.refreshed_tap_position.y);
+        LabelMarkerBuilder lb = new LabelMarkerBuilder();
+        final Marker marker = lb.
+                setPosition(new Position(tMarker.refreshed_tap_position.x, tMarker.refreshed_tap_position.y)).
+//                setPosition(this.draft.layer.getPositionOfLayer(primitive)).
+                build();
+        Log.d(TAG, "primitive: (" + primitive.x + ", " + primitive.y );
+//        marker.position.set(this.draft.layer.getPositionOfLayer(marker.position));
+
+        final EditText edit_text = new EditText(context);
+        ((LabelMarker) marker).setLabel(((LabelMarker) tMarker).getLabel());
+
+        draft.addMarker(marker);
+
+        //  建立MakerRenderer
+        MarkerRendererBuilder mrb = new MarkerRendererBuilder();
+        Renderable marker_renderer = mrb.
+                setReference(marker).
+                setPoint(marker).
+                setText(new MapString((LabelMarker) marker), marker.position).
+                build();
+
+        rendererManager.addRenderer(marker_renderer);
+
+        //  建立對應關係
+        renderableMap.put(marker, marker_renderer);
+
+
+        if (state == Selectable.CRUD.UPDATE){
+            StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.UPDATE));
+        }
+        else {
+            StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.CREATE));
+        }
+    }
+
+    private void addLabelMarkerRedo2(DataStepByStep data) {
+        Marker tMarker = data.getMarker();
+        Selectable.CRUD state = data.getCRUDstate();
+        Position primitive = new Position(tMarker.refreshed_tap_position.x, tMarker.refreshed_tap_position.y);
+        LabelMarkerBuilder lb = new LabelMarkerBuilder();
+        final Marker marker = lb.
+                setPosition(new Position(tMarker.refreshed_tap_position.x, tMarker.refreshed_tap_position.y)).
+//                setPosition(this.draft.layer.getPositionOfLayer(primitive)).
+        build();
+        Log.d(TAG, "primitive: (" + primitive.x + ", " + primitive.y );
+//        marker.position.set(this.draft.layer.getPositionOfLayer(marker.position));
+
+        final EditText edit_text = new EditText(context);
+        ((LabelMarker) marker).setLabel(((LabelMarker) tMarker).getLabel());
+
+        draft.addMarker(marker);
+
+        //  建立MakerRenderer
+        MarkerRendererBuilder mrb = new MarkerRendererBuilder();
+        Renderable marker_renderer = mrb.
+                setReference(marker).
+                setPoint(marker).
+                setText(new MapString((LabelMarker) marker), marker.position).
+                build();
+
+        rendererManager.addRenderer(marker_renderer);
+
+        //  建立對應關係
+        renderableMap.put(marker, marker_renderer);
+
+
+        if (state == Selectable.CRUD.UPDATE){
+            StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.UPDATE));
+        }
+        else {
+            StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.CREATE));
+        }
+    }
+
+    //2016/10/17 By Jonas
+    private void updateLabelMarker(DataStepByStep data) {
+        Marker tMarker = data.getMarker();
+
+        if (renderableMap.containsKey(tMarker)) {
+            rendererManager.removeRenderer(renderableMap.get(tMarker));
+        }
+
+        tMarker.position.set(tMarker.refreshed_tap_position);
+
+        ((LabelMarker) tMarker).setLabel(((LabelMarker) tMarker).getLabel());
+
+        draft.addMarker(tMarker);
+
+        //  建立MakerRenderer
+        MarkerRendererBuilder mrb = new MarkerRendererBuilder();
+        Renderable marker_renderer = mrb.
+                setReference(tMarker).
+                setPoint(tMarker).
+                setText(new MapString((LabelMarker) tMarker), tMarker.position).
+                build();
+
+        rendererManager.addRenderer(marker_renderer);
+
+        //  建立對應關係
+        renderableMap.put(tMarker, marker_renderer);
+
     }
 
     private void addAnchorMarker(Position position) {
         //  取得AnchorMarker與ControlMaker
         final Marker marker = AnchorMarker.getInstance();
-        Marker linked = AnchorMarker.getInstance().getLink();
+        Marker linked = AnchorMarker.getInstance().getLink(); //this link was created by marker.
 
         if (renderableMap.containsKey(marker) && renderableMap.containsKey(linked)) {
             rendererManager.removeRenderer(renderableMap.get(marker));
@@ -236,10 +352,12 @@ public class DraftDirector {
                 .show();
 
         marker.position.set(position);
-        linked.position.set(new Position(position.x + 50, position.y + 50));
+        linked.position.set(new Position(position.x + 50, position.y + 50)); //linked位移(x, y) = (50, 50)
+        marker.refreshed_tap_position.set(position);
+        linked.refreshed_tap_position.set(new Position(position.x + 50, position.y + 50)); //linked位移(x, y) = (50, 50)
 
-        draft.addMarker(marker);
-        draft.addMarker(linked);
+        draft.addMarker(marker); //add to markerList by MarkerManager
+        draft.addMarker(linked); //add to markerList by MarkerManager
 
         Position[] positions = {marker.position, linked.position};
         List<Position> position_list = new ArrayList<Position>(Arrays.asList(positions));
@@ -247,8 +365,8 @@ public class DraftDirector {
         //  建立MakerRenderer
         MarkerRendererBuilder mrb = new MarkerRendererBuilder();
         Renderable marker_renderer = mrb.
-                setLinkLine((LinkMarker) marker).
-                setReference(marker).
+                setLinkLine((LinkMarker) marker). //set head and tail
+                setReference(marker). //參考marker
                 setPoint(marker).
                 setText(new MapString((AnchorMarker) marker), position_list).
                 build();
@@ -263,33 +381,31 @@ public class DraftDirector {
         //  建立對應關係
         renderableMap.put(marker, marker_renderer);
         renderableMap.put(linked, link_renderer);
+
+        StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.CREATE));
     }
 
-    public void removeMarker(Marker marker) {
-        if (marker == null)
-            return;
-        if (renderableMap.containsKey(marker)) {
-            Renderable renderable = renderableMap.get(marker);
-            rendererManager.removeRenderer(renderable);
-            renderableMap.remove(marker);
+    private void addAnchorMarker() {
+        //  取得AnchorMarker與ControlMaker
+        final Marker marker = AnchorMarker.getInstance();
+        Marker linked = AnchorMarker.getInstance().getLink(); //this link was created by marker.
+
+        if (renderableMap.containsKey(marker) && renderableMap.containsKey(linked)) {
+            rendererManager.removeRenderer(renderableMap.get(marker));
+            rendererManager.removeRenderer(renderableMap.get(linked));
         }
-        draft.removeMarker(marker);
-    }
 
-    private void addMeasureMarker(Position position) {
-        //  建立LinkMaker與ControlMaker
-        ControlMarkerBuilder cb = new ControlMarkerBuilder();
-        Marker linked = cb.
-                setPosition(new Position(position.x - 100, position.y)).
-                build();
-        LinkMarkerBuilder lb = new MeasureMarkerBuilder();
-        Marker marker = lb.
-                setPosition(position).
-                setLink(linked).
-                build();
 
-        draft.addMarker(marker);
-        draft.addMarker(linked);
+        ((AnchorMarker) marker).setRealDistance( ((AnchorMarker)marker).getRealDistance() );
+
+//        marker.position.set(position);
+//        linked.position.set(new Position(position.x + 50, position.y + 50)); //linked位移(x, y) = (50, 50)
+
+        marker.position.set(marker.refreshed_tap_position);
+        linked.position.set(linked.refreshed_tap_position);
+
+        draft.addMarker(marker); //add to markerList by MarkerManager
+        draft.addMarker(linked); //add to markerList by MarkerManager
 
         Position[] positions = {marker.position, linked.position};
         List<Position> position_list = new ArrayList<Position>(Arrays.asList(positions));
@@ -297,10 +413,10 @@ public class DraftDirector {
         //  建立MakerRenderer
         MarkerRendererBuilder mrb = new MarkerRendererBuilder();
         Renderable marker_renderer = mrb.
-                setLinkLine((LinkMarker) marker).
-                setReference(marker).
+                setLinkLine((LinkMarker) marker). //set head and tail
+                setReference(marker). //參考marker
                 setPoint(marker).
-                setText(new MapString((MeasureMarker) marker), position_list).
+                setText(new MapString((AnchorMarker) marker), position_list).
                 build();
 
         Renderable link_renderer = mrb.
@@ -313,21 +429,126 @@ public class DraftDirector {
         //  建立對應關係
         renderableMap.put(marker, marker_renderer);
         renderableMap.put(linked, link_renderer);
+
+        StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.CREATE));
+    }
+
+    public void removeMarker(Marker marker) {
+        Log.d(TAG, "removeMarker(Marker marker)");
+        if (marker == null) //abstract "Marker" will call one time.
+            return;
+        if (renderableMap.containsKey(marker)) { //檢查Map是否有此marker，有則刪除
+            Log.d(TAG, "renderableMap contain!!");
+            Renderable renderable = renderableMap.get(marker); //取得此marker的renderable
+            rendererManager.removeRenderer(renderable); //刪除renderObjects裡的render_object
+            renderableMap.remove(marker);
+        }
+        draft.removeMarker(marker);
+    }
+
+    /*
+        (linked)*---------*(marker)
+     */
+
+    private void addMeasureMarker(Position position) {
+        //  Step1.1:建立 ControlMarkerBuilder 與Step1.2:建立 LinkMarkerBuilder
+        ControlMarkerBuilder cb = new ControlMarkerBuilder();
+        Marker linked = cb.
+                setPosition(new Position(position.x - 100, position.y)).
+                build(); //return Marker
+        LinkMarkerBuilder lb = new MeasureMarkerBuilder();
+        Marker marker = lb.
+                setPosition(position).
+                setLink(linked). //儲存linked marker
+                build(); //return Marker
+
+        Log.d(TAG, "linked: (" + linked.refreshed_tap_position.x + ", " + linked.refreshed_tap_position.y + ") marker: (" + marker.refreshed_tap_position.x + ", " + marker.refreshed_tap_position.y + ")");
+
+        draft.addMarker(marker);//this will be adjusted the position of marker in draft
+        draft.addMarker(linked);//this will be adjusted the position of marker in draft
+
+        Position[] positions = {marker.position, linked.position};
+        List<Position> position_list = new ArrayList<Position>(Arrays.asList(positions));
+
+        //  Step2: 建立MakerRenderer
+        MarkerRendererBuilder mrb = new MarkerRendererBuilder();
+        Renderable marker_renderer = mrb.
+                setLinkLine((LinkMarker) marker).
+                setReference(marker).
+                setPoint(marker).
+                setText(new MapString((MeasureMarker) marker), position_list).
+                build(); //product will be cleared
+
+        Renderable link_renderer = mrb.
+                setReference(linked). //create the relationship between marker and render
+                build(); //product will be cleared
+
+        rendererManager.addRenderer(marker_renderer);
+        rendererManager.addRenderer(link_renderer);
+
+        //  建立對應關係
+        renderableMap.put(marker, marker_renderer);
+        renderableMap.put(linked, link_renderer);
+
+        StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.CREATE));
+    }
+
+    private void addMeasureMarker(Marker marker) {
+        //  建立LinkMaker與ControlMaker
+        ControlMarkerBuilder cb = new ControlMarkerBuilder();
+        Marker newLinked = cb.
+                setPosition( ((LinkMarker)marker).getLink().refreshed_tap_position ).
+//                setPosition(new Position(marker.refreshed_tap_position.x - 100, marker.refreshed_tap_position.y)).
+                build();
+        LinkMarkerBuilder lb = new MeasureMarkerBuilder();
+        Marker newMarker = lb.
+                setPosition(marker.refreshed_tap_position).
+                setLink(newLinked).
+                build();
+
+
+        draft.addMarker(newMarker); //會取得Layer上的位置
+        draft.addMarker(newLinked); //會取得Layer上的位置
+
+        Position[] positions = {newMarker.position, newLinked.position};
+        List<Position> position_list = new ArrayList<Position>(Arrays.asList(positions));
+
+        //  建立MakerRenderer
+        MarkerRendererBuilder mrb = new MarkerRendererBuilder();
+        Renderable marker_renderer = mrb.
+                setLinkLine((LinkMarker) newMarker).
+                setReference(newMarker).
+                setPoint(newMarker).
+                setText(new MapString((MeasureMarker) newMarker), position_list).
+                build();
+
+        Renderable link_renderer = mrb.
+                setReference(newLinked).
+                build();
+
+        rendererManager.addRenderer(marker_renderer);
+        rendererManager.addRenderer(link_renderer);
+
+        //  建立對應關係
+        renderableMap.put(newMarker, marker_renderer);
+        renderableMap.put(newLinked, link_renderer);
+
+        StepByStepUndo.add(new DataStepByStep(newMarker, Selectable.CRUD.CREATE));
     }
 
     public Marker getNearestMarker(Position position) {
-        return draft.getNearestMarker(position);
+        return draft.getNearestMarker(position); //點選時，取得最接近的Marker原件
     }
 
     public Toolbox.Tool getNearestTool(Position position) {
-        return toolboxRenderer.getInstance(position, 64);
+        return toolboxRenderer.getInstance(position, 64); //點選時，取得最接近的tool原件
     }
 
     public void render(Canvas canvas) {
         canvas.save();
         draftRenderer.onDraw(canvas);
 
-        for (Renderable renderable : rendererManager.renderObjects) {
+        for (Renderable renderable : rendererManager.renderObjects) { //畫上所有物件e.g Line, Anchor, Label and etc.
             renderable.onDraw(canvas);
         }
 
@@ -337,8 +558,8 @@ public class DraftDirector {
             toolboxRenderer.onDraw(canvas);
 
         if (tool != null) {
-            Bitmap bitmap = ToolboxRenderer.getToolIcon(tool);
-            canvas.drawBitmap(bitmap, canvas.getWidth() - bitmap.getWidth(), canvas.getHeight() - bitmap.getHeight(), paint);
+            Bitmap bitmap = ToolboxRenderer.getToolIcon(tool); //依據tool(key)取得icon resource(value)
+            canvas.drawBitmap(bitmap, canvas.getWidth() - bitmap.getWidth(), canvas.getHeight() - bitmap.getHeight(), paint); //將icon放置右下角
         }
     }
 
@@ -346,7 +567,7 @@ public class DraftDirector {
         if (tool == Toolbox.Tool.CLEAR_PATH)
             draft.clearPaths();
         else
-            this.tool = tool;
+            this.tool = tool; //assigned selected component
         switch (tool) {
             case MAKER_TYPE_LINK:
                 this.markerType = MeasureMarker.class;
@@ -357,7 +578,164 @@ public class DraftDirector {
             case MARKER_TYPE_LABEL:
                 this.markerType = LabelMarker.class;
                 break;
+            case EDIT_UNDO:
+                doUndoTask2();
+                break;
+            case EDIT_REDO:
+                doRedoTask2();
+                break;
         }
+    }
+
+//    private void doUndoTask() {
+//
+//        Log.d(TAG, "EDIT_UNDO====================================");
+//        Marker tempLastMarker = draft.layer.markerManager.getLastMaker();
+//        Marker temmpLastControlMarker = null;
+//        if (tempLastMarker != null)
+//        if (tempLastMarker instanceof LabelMarker) {
+//            RedoTempLL.add(tempLastMarker);
+//            removeMarker(tempLastMarker); //Remove marker Marker
+//            Log.d(TAG, "LabelMarker");
+//        } else { //MeasureMarker and AnchorMarker
+//            // Remove linked Marker LinkedList{marker, control}
+//            tempLastMarker = draft.layer.markerManager.getPenultimateMarker(); //marker，倒數第二
+//            RedoTempLL.add(tempLastMarker);
+//            removeMarker(tempLastMarker);//Remove marker Marker
+//
+//            tempLastMarker = draft.layer.markerManager.getLastMaker(); //control
+//            RedoTempLL.add(tempLastMarker);
+//            removeMarker(tempLastMarker); //Remove marker Control(Linked)
+//            Log.d(TAG, "LinkMarker");
+//        }
+//    }
+
+//    private void doRedoTask() {
+//        Log.d(TAG, "EDIT_REDO====================================");
+//        Marker tempLastMarker = draft.layer.markerManager.getLastMaker();
+//        Marker temmpLastControlMarker = null;
+//        if (!RedoTempLL.isEmpty()) {
+//            tempLastMarker = RedoTempLL.pollLast(); //get control, LinkedList{marker, control}
+//            if (tempLastMarker instanceof LabelMarker) {
+//                addLabelMarkerRedo(tempLastMarker);
+//                Log.d(TAG, "REDO: addLabelMarker()");
+//            } else {  //MeasureMarker or AnchorMarker
+//                temmpLastControlMarker = tempLastMarker;
+//                tempLastMarker = RedoTempLL.pollLast(); //get marker, LinkedList{marker, control}
+//                if (tempLastMarker instanceof AnchorMarker) {
+//                    addAnchorMarker();
+//                    Log.d(TAG, "REDO: addAnchorMarker()");
+//                } else if (tempLastMarker instanceof MeasureMarker) {
+////                            addMeasureMarker(tempLastMarker.refreshed_tap_position);
+//                    addMeasureMarker(tempLastMarker);
+//                    Log.d(TAG, "REDO: addMeasureMarker()");
+//                }
+//            }
+//        }
+//    }
+
+    private void doUndoTask2() {
+
+        Log.d(TAG, "EDIT_UNDO2====================================");
+        if (!StepByStepUndo.isEmpty()) { //不為空
+
+            DataStepByStep data = StepByStepUndo.pollLast();
+            Marker dataMarker = data.getMarker();
+
+            switch (data.getCRUDstate()) {
+                case CREATE:
+                    //do delete();
+                    StepByStepRedo.add(new DataStepByStep(dataMarker, Selectable.CRUD.DELETE));
+                    if (dataMarker instanceof LabelMarker) {
+                        Log.d(TAG, "LabelMarker");
+                        this.removeMarker(dataMarker);
+                    } else { //MeasureMarker, AnchorMarker
+                        this.removeMarker( ((LinkMarker)dataMarker).getLink() );
+                        this.removeMarker( dataMarker );
+                    }
+
+                    break;
+                case UPDATE:
+                    //Looking up old data
+                    if (dataMarker instanceof LabelMarker) {
+                        Log.d(TAG, "Update: LabelMarker");
+                        if (dataMarker.historyTapPositionsUndo.size() > 1) { //第一個是原始位置
+                            StepByStepRedo.add(new DataStepByStep(dataMarker, Selectable.CRUD.UPDATE));
+                            this.removeMarker(dataMarker); //刪掉最新的位置renderer，還原前一位置
+                            Position redoPositionRef = dataMarker.historyTapPositionsUndo.pollLast(); //give this to redoLL
+                            Position redoPosition = new Position(redoPositionRef.x, redoPositionRef.y);
+                            dataMarker.historyTapPositionsRedo.addLast(redoPosition); //!!important!! new one Position
+                            dataMarker.refreshed_tap_position.set(dataMarker.historyTapPositionsUndo.getLast()); //update tap-position
+                            this.updateLabelMarker(data);
+//                            Log.d(TAG, "Update: redoPosition: " + dataMarker.historyTapPositionsRedo.getLast().x + ", " + dataMarker.historyTapPositionsRedo.getLast().y);
+                        }
+
+                    } else { //MeasureMarker, AnchorMarker
+                        this.removeMarker( ((LinkMarker)dataMarker).getLink() );
+                        this.removeMarker( dataMarker );
+                    }
+                    break;
+                case DELETE:
+                    //do re-create()
+                    break;
+            }
+        }
+
+
+
+    }
+
+
+    private void doRedoTask2() {
+        Log.d(TAG, "EDIT_REDO2====================================");
+
+        if (!StepByStepRedo.isEmpty()) { //不為空
+
+            DataStepByStep data = StepByStepRedo.pollLast();
+            Marker dataMarker = data.getMarker();
+
+            switch (data.getCRUDstate()) {
+                case CREATE:
+                    //do create();
+
+                    break;
+                case UPDATE:
+                    //Looking up old data in every marker
+                    if (dataMarker instanceof LabelMarker) {
+                        Log.d(TAG, "Update: LabelMarker");
+                        if (!dataMarker.historyTapPositionsRedo.isEmpty()) {
+                            this.removeMarker(dataMarker); //移除目前的marker，還原至前一位置
+                            Position undoPositionRef = dataMarker.historyTapPositionsRedo.pollLast();
+                            Position undoPosition = new Position(undoPositionRef.x, undoPositionRef.y);
+                            dataMarker.historyTapPositionsUndo.addLast(undoPosition);
+                            dataMarker.refreshed_tap_position.set(undoPosition); //update tap-position
+                            this.updateLabelMarker(data);
+                            StepByStepUndo.add(new DataStepByStep(dataMarker, Selectable.CRUD.UPDATE));
+                        } //if ()
+                    } else { //MeasureMarker, AnchorMarker
+                        this.removeMarker( ((LinkMarker)dataMarker).getLink() );
+                        this.removeMarker( dataMarker );
+                    }
+                    break;
+                case DELETE:
+                    //do Re-create()
+                    if (dataMarker instanceof LabelMarker) {
+                        Log.d(TAG, "REDO: addLabelMarkerRedo()");
+//                        this.addLabelMarkerRedo(data);
+                        this.updateLabelMarker(data); //在Redo中使用update來create舊的marker，避免新增新的marker!!若新創marker，會造成後面update與這有關的marker刪除不了之。
+                        StepByStepUndo.add(new DataStepByStep(dataMarker, Selectable.CRUD.CREATE));
+
+                    } else if (dataMarker instanceof AnchorMarker) { //MeasureMarker, AnchorMarker
+                        this.addAnchorMarker();
+                        Log.d(TAG, "REDO: addAnchorMarker()");
+                    } else if (dataMarker instanceof MeasureMarker) {
+                        addMeasureMarker(dataMarker);
+                        Log.d(TAG, "REDO: addMeasureMarker()");
+                    }
+                    break;
+            }
+        }
+
     }
 
     public void deselectTool() {
@@ -368,19 +746,30 @@ public class DraftDirector {
         return tool;
     }
 
-    public void holdMarker(Marker marker) {
+    public void holdMarker(Marker marker) { //The Marker will be hold after long pressing
         markerHold = marker;
     }
 
+    //after releasing the marker by hand
     public void releaseMarker() {
-        markerHold = null;
+        if (markerHold != null) {
+            DataStepByStep update = new DataStepByStep(markerHold, Selectable.CRUD.UPDATE);
+            markerHold.historyTapPositionsUndo.addLast(new Position(markerHold.refreshed_tap_position.x, markerHold.refreshed_tap_position.y)); //把最新位置新增至LinkedList最後
+            Log.d(TAG, "historyIndex = " + markerHold.historyTapPositionsUndo.size());
+            Log.d(TAG, "new Position = " + markerHold.refreshed_tap_position.x + "," + markerHold.refreshed_tap_position.y);
+            StepByStepUndo.add(update);//update the last location of marker
+
+
+            markerHold = null;
+        }
+
     }
 
     public void selectMarker() {
-        this.markerSelected = this.markerSelecting;
+        this.markerSelected = this.markerSelecting; //?Jonas
         this.markerSelecting = null;
         if (this.markerSelected != null)
-            this.markerSelected.select();
+            this.markerSelected.select(); //change state
     }
 
     public void deselectMarker() {
@@ -406,6 +795,7 @@ public class DraftDirector {
     public void moveHoldMarker(Position position) {
         if (this.markerHold != null) {
             draft.moveMarker(markerHold, position);
+            markerHold.refreshed_tap_position = position; //儲存marker移動的位置(螢幕點選的位置)
         }
     }
 

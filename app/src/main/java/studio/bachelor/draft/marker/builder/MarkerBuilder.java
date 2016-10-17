@@ -39,9 +39,9 @@ public abstract class MarkerBuilder implements Builder {
      * @return {@link #product}的複製品。
      */
     public Marker build() {
-        createProductIfNull();
+        createProductIfNull(); //呼叫子function
         Marker return_value = product;
-        clearProductCache();
+        clearProductCache(); //assign product as null
         return return_value;
     }
 
@@ -52,6 +52,8 @@ public abstract class MarkerBuilder implements Builder {
     public MarkerBuilder setPosition(Position position) {
         createProductIfNull();
         product.position.set(position);
+        product.refreshed_tap_position.set(position);
+        product.historyTapPositionsUndo.add(position); //加入historyLinkedList
         return this;
     }
 }

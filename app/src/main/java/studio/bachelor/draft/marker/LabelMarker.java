@@ -25,6 +25,10 @@ public class LabelMarker extends Marker implements MapStringSupport {
         this.label = label;
     }
 
+    public String getLabel() {
+        return label;
+    }
+
     @Override
     public String getObjectMappedString() {
         return String.valueOf(label);

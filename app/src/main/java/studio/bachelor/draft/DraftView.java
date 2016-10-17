@@ -35,7 +35,7 @@ public class DraftView extends View{
     @Override
     protected void onSizeChanged(int w, int h, int old_w, int old_h) {
         super.onSizeChanged(w, h, old_w, old_h);
-        director.setToolboxRenderer(new Position(w / 10, 0), w - w / 10, h / 7.5f);
+        director.setToolboxRenderer(new Position(w / 10, 0), w - w / 10, h / 7.5f); //position, width of toolbox, height of toolbox
         director.setWidthAndHeight(w, h);
     }
 
@@ -43,7 +43,7 @@ public class DraftView extends View{
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         director.render(canvas);
-        invalidate();
+        invalidate(); //要求Android系統執行onDraw()
         return;
     }
 }

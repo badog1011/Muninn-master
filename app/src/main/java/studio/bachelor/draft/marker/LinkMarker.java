@@ -13,7 +13,7 @@ public class LinkMarker extends Marker {
     /**
      * 連結的{@link studio.bachelor.draft.marker.Marker}。
      */
-    protected Marker link;
+    protected Marker link; //此Marker，可以由子類別修改
 
     public LinkMarker() {
         super();
@@ -28,8 +28,8 @@ public class LinkMarker extends Marker {
      */
     @Override
     public void remove() {
-        link.remove();
-        director.removeMarker(link);
+        link.remove(); //? by Jonas
+        director.removeMarker(link); //delete by Jonas
         super.remove();
     }
 

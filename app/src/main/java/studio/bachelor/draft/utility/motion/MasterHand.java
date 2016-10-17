@@ -85,8 +85,8 @@ public class MasterHand implements
 
     @Override
     public boolean onFling(MotionEvent event1, MotionEvent event2, float velocity_x, float velocity_y) {
-        Position zero = new Position();
-        double velocity = zero.getDistanceTo(new Position(velocity_x, velocity_y));
+        Position zero = new Position(); //(x, y) = (0, 0)
+        double velocity = zero.getDistanceTo(new Position(velocity_x, velocity_y)); //?Jonas 每秒在x, y 軸移動的距離(pixels)
         if(velocity > 5000)
             postMotion(MotionHandler.Motion.FlING, event1, event2);
         return true;
@@ -103,7 +103,7 @@ public class MasterHand implements
     }
 
     @Override
-    public void onShowPress(MotionEvent event) {
+    public void onShowPress(MotionEvent event) { //The user has performed a down MotionEvent and not performed a move or up yet
         postMotion(MotionHandler.Motion.LONG_PRESS_READY, event, null);
     }
 

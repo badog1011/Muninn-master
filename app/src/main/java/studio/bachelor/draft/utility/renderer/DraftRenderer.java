@@ -22,10 +22,10 @@ import studio.bachelor.muninn.Muninn;
 public class DraftRenderer implements Renderable {
     private Draft draft;
     private Bitmap birdview;
-    private final Paint paint = new Paint();
-    private final Paint pathPaint = new Paint();
+    private final Paint paint = new Paint(); //for image
+    private final Paint pathPaint = new Paint(); //for path
 
-    {
+    { //path會依據Paint的設定，呈現不同線條
         pathPaint.setStrokeCap(Paint.Cap.ROUND);
         pathPaint.setStrokeWidth(5.0f);
         pathPaint.setStyle(Paint.Style.STROKE);

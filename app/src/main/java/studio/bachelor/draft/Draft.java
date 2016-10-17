@@ -53,7 +53,7 @@ public class Draft{
     }
 
     public void createPathIfPathMode(Position position) {
-        currentPath = new Path();
+        currentPath = new Path(); //建立path
         Position transformed = getDraftPosition(position);
         currentPath.moveTo((float)transformed.x, (float)transformed.y);
     }
@@ -91,12 +91,26 @@ public class Draft{
     }
 
     public void addMarker(Marker marker) {
-        marker.position.set(getDraftPosition(marker.position));
+        Position tempPosition = getDraftPosition(marker.position); //return new Position
+        marker.position.set(tempPosition); //取得Screen上的真實位置
+//        marker.refreshed_tap_position.set(tempPosition);
         layer.markerManager.addMarker(marker);
     }
 
+    public void addMarkerWithAbos(Marker marker) {
+        Position tempPosition = getDraftPosition(marker.position); //return new Position
+        marker.position.set(tempPosition); //取得Screen上的真實位置
+//        marker.refreshed_tap_position.set(tempPosition);
+        layer.markerManager.addMarker(marker);
+    }
+
+//    public void addMarkerToLast(Marker marker) {
+//        marker.position.set(getDraftPosition(marker.position));
+//        layer.markerManager.addMarker(marker);
+//    }
+
     public void removeMarker(Marker marker) {
-        marker.position.set(getDraftPosition(marker.position));
+        marker.position.set(getDraftPosition(marker.position)); //?Jonas get the marker's position on screen.
         layer.markerManager.removeMarker(marker);
     }
 

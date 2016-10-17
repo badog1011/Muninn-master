@@ -1,5 +1,7 @@
 package studio.bachelor.draft.marker;
 
+import android.util.Log;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -12,10 +14,14 @@ import studio.bachelor.draft.utility.Position;
  * <code>MarkerManager</code>管理所有<code>Marker</code>物件。
  */
 public class MarkerManager {
+    private final String TAG = "MarkerManager";
     /**
      * 儲存所有Marker的List，
      */
     public final List<Marker> markers = new LinkedList<Marker>();
+    public final List<Marker> forRedoMarkers = new LinkedList<Marker>(); //儲存上一步驟
+
+    Marker lastMaker = null;
 
     public MarkerManager() {
 
@@ -26,8 +32,11 @@ public class MarkerManager {
      * @param marker 欲增加之Marker。
      */
     public void addMarker(final Marker marker) {
-        if(marker != null && !markers.contains(marker))
+        if(marker != null && !markers.contains(marker)) { //marker不為空且marker不在markerList裡
             markers.add(marker);
+            Log.d(TAG, "MarkerManager: addMarker()");
+//            updateLastMarker(marker);
+        }
     }
 
     /**
@@ -38,6 +47,35 @@ public class MarkerManager {
         if(marker != null)
             markers.remove(marker);
     }
+
+    //remove last marker from linkedlist
+    public void removeMarker() {
+        if(markers != null && lastMaker != null) {
+//            markers.remove(lastMaker);
+            lastMaker.remove();
+            Log.d(TAG, "removeMarker() Success");
+        } else Log.d(TAG, "removeMarker() Fail");
+    }
+
+    public Marker getLastMaker() {
+        return ((LinkedList) markers).isEmpty() ? null : (Marker)((LinkedList) markers).getLast();
+    }
+
+    public Marker getPenultimateMarker() {
+        int size = ((LinkedList) markers).size();
+        return (Marker)((LinkedList) markers).get(size-2);
+    }
+
+    public void addMarker2RedoList(final Marker marker) {
+        if(marker != null && !markers.contains(marker))
+            markers.add(marker);
+    }
+
+//    //更新最後Marker
+//    public void updateLastMarker(Marker marker) {
+//        Log.d(TAG, "updateLastMarker(Marker marker)");
+//        this.lastMaker = marker;
+//    }
 
     /**
      * 取得距離<code>position</code>最近的Marker。

@@ -26,13 +26,14 @@ public class Layer{
         center = new Position(width / 2, height / 2);
     }
 
-    public void setWidthAndHeight(float width, float height) {
+    public void setWidthAndHeight(float width, float height) { //包含Marker位置
         this.height = height;
         this.width = width;
         center.set(new Position(this.width / 2, this.height / 2));
         for(Marker marker : markerManager.markers) {
             marker.position.set(getPositionOfLayer(marker.position));
         }
+
     }
 
     public Position getCenter() {

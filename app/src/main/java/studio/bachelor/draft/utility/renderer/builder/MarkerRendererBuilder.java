@@ -1,5 +1,7 @@
 package studio.bachelor.draft.utility.renderer.builder;
 
+import android.util.Log;
+
 import java.util.List;
 
 import studio.bachelor.draft.marker.LinkMarker;
@@ -26,6 +28,7 @@ public class MarkerRendererBuilder extends RendererBuilder {
             product = new MarkerRenderer();
     }
 
+    //建立Marker與Renderer的關係
     public MarkerRendererBuilder setReference(Marker marker) {
         createProductIfNull();
         MarkerRenderer renderer = (MarkerRenderer)product;
@@ -43,8 +46,9 @@ public class MarkerRendererBuilder extends RendererBuilder {
 
     public MarkerRendererBuilder setLinkLine(LinkMarker marker) {
         createProductIfNull();
-        MarkerRenderer renderer = (MarkerRenderer)product;
-        Line primitive = new Line(marker.position, marker.getLink().position);
+        MarkerRenderer renderer = (MarkerRenderer)product; //initial the line's parameter
+        Line primitive = new Line(marker.position, marker.getLink().position); //implements Renderable
+        Log.d("setLinkLine", "=====linked: (" + marker.getLink().refreshed_tap_position.x + ", " + marker.getLink().refreshed_tap_position.y + ") marker: (" + marker.refreshed_tap_position.x + ", " + marker.refreshed_tap_position.y + ")");
         renderer.primitives.add(primitive);
         return this;
     }
@@ -84,7 +88,7 @@ public class MarkerRendererBuilder extends RendererBuilder {
     public MarkerRendererBuilder setText(MapString string, List<Position> positions) {
         createProductIfNull();
         MarkerRenderer renderer = (MarkerRenderer)product;
-        Text text = new CenterText(string, positions);
+        Text text = new CenterText(string, positions); //implements Renderable
         renderer.primitives.add(text);
         return this;
     }

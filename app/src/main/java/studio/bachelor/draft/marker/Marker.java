@@ -1,8 +1,12 @@
 package studio.bachelor.draft.marker;
 
+import android.util.Log;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+
+import java.util.LinkedList;
 
 import studio.bachelor.draft.DraftDirector;
 import studio.bachelor.draft.utility.Lockable;
@@ -19,6 +23,10 @@ import studio.bachelor.draft.utility.renderer.layer.Layer;
 public abstract class Marker implements Lockable, Touchable, Selectable, Removable, Metadata {
     /** <code>position</code>將以<code>Draft</code>中心為基準點。 */
     public final Position position = new Position();
+    public Position refreshed_tap_position = new Position();
+    public LinkedList<Position> historyTapPositionsUndo = new LinkedList<Position>();
+    public LinkedList<Position> historyTapPositionsRedo = new LinkedList<Position>();
+
     protected static DraftDirector director = DraftDirector.instance;
     private boolean locked = false;
     private int ID;
@@ -26,6 +34,8 @@ public abstract class Marker implements Lockable, Touchable, Selectable, Removab
      * 目前的選取狀態({@link studio.bachelor.draft.utility.Selectable.State})，預設為未選取。
      */
     private State selectionState = State.UNSELECTED;
+
+//    private CRUD crud = CRUD.UNKNOWN; //此Marker處裡狀況
 
     public Marker() {
         ID = director.allocateObjectID();
@@ -36,6 +46,14 @@ public abstract class Marker implements Lockable, Touchable, Selectable, Removab
         this.position.y = position.y;
     }
 
+//    public void updateCRUDstate(CRUD state) {
+//        this.crud = state;
+//    }
+//
+//    public CRUD getCRUDstate() {
+//        return this.crud;
+//    }
+
     public void update() {
         return;
     }
@@ -45,6 +63,7 @@ public abstract class Marker implements Lockable, Touchable, Selectable, Removab
      */
     public void remove() {
         director.removeMarker(this);
+        Log.d("Marker", "remove()");
     }
 
     /**
@@ -125,4 +144,8 @@ public abstract class Marker implements Lockable, Touchable, Selectable, Removab
     public int getID() {
         return ID;
     }
+
+//    public void changeCRUDstate(CRUD state) {
+//        this.crud = state;
+//    }
 }

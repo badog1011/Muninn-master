@@ -15,6 +15,7 @@ import studio.bachelor.muninn.R;
 
 /**
  * Created by BACHELOR on 2016/02/24.
+ * 處裡線條參數
  */
 public class MarkerRenderer implements Renderable {
     private Marker reference;

@@ -47,6 +47,7 @@ public class ToolboxRenderer implements TouchableGroup, Renderable {
     }
 
     public ToolboxRenderer(Toolbox toolbox, Position upper_left_corner, float width, float height) {
+//        this.paint.setARGB(88, 88, 88, 88);
         this.toolbox = toolbox;
         this.upperLeftCorner = upper_left_corner;
         this.width = width;
