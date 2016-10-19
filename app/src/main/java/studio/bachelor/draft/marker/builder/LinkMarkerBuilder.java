@@ -1,5 +1,6 @@
 package studio.bachelor.draft.marker.builder;
 
+import studio.bachelor.draft.marker.ControlMarker;
 import studio.bachelor.draft.marker.LinkMarker;
 import studio.bachelor.draft.marker.Marker;
 import studio.bachelor.draft.utility.Builder;
@@ -34,6 +35,7 @@ public class LinkMarkerBuilder extends MarkerBuilder{
     public LinkMarkerBuilder setLink(Marker marker){
         createProductIfNull();
         ((LinkMarker)product).setLink(marker);
+        ((ControlMarker)marker).setMarker(product); //tell linked marker who is his daddy
         return this;
     }
 

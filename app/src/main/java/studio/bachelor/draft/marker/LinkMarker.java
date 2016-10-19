@@ -14,6 +14,7 @@ public class LinkMarker extends Marker {
      * 連結的{@link studio.bachelor.draft.marker.Marker}。
      */
     protected Marker link; //此Marker，可以由子類別修改
+//    private Marker linksFatherMarker; // recording who is your daddy, link's relationship marker
 
     public LinkMarker() {
         super();
@@ -40,6 +41,10 @@ public class LinkMarker extends Marker {
     public void setLink(Marker marker) {
         this.link = marker;
     }
+
+//    public void setMarker(Marker linkFather) {
+//        this.linksFatherMarker = linkFather; //record link's father, marker which is MeasureMarker-type
+//    }
 
     public Marker getLink() {return this.link;}
 

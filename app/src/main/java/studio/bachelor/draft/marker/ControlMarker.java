@@ -8,6 +8,9 @@ import studio.bachelor.draft.utility.Position;
  * 其中一個表現就是<code>ControlMarker</code>無法透過自身的Instance被移除。
  */
 public class ControlMarker extends Marker {
+
+    private Marker linksFatherMarker; // recording who is your daddy, link's relationship marker
+
     public ControlMarker() {
         super();
     }
@@ -26,5 +29,13 @@ public class ControlMarker extends Marker {
 
     public String getElementName() {
         return "ControlMarker";
+    }
+
+    public void setMarker(Marker linkFather) {
+        this.linksFatherMarker = linkFather; //record link's father, marker which is MeasureMarker-type
+    }
+
+    public Marker getLinksFatherMarker() {
+        return this.linksFatherMarker;
     }
 }
