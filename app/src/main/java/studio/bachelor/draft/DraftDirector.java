@@ -99,6 +99,8 @@ public class DraftDirector {
     private Thread MD5EncoderThread;
     private List<File> signFiles = new LinkedList<File>();
 
+    boolean firstTime = true; //Create後，firstTime = false; Delete後，firstTime = true
+
 
     {
         draft = Draft.getInstance();
@@ -166,7 +168,13 @@ public class DraftDirector {
         if (markerType == MeasureMarker.class) {
             addMeasureMarker(position);
         } else if (markerType == AnchorMarker.class) {
-            addAnchorMarker(position);
+            if (firstTime) {
+                firstTime = false; //global var
+                addAnchorMarker(position, true);
+            } else {
+                addAnchorMarker(position, false);
+            }
+
         } else if (markerType == LabelMarker.class) {
             addLabelMarker(position);
         }
@@ -325,7 +333,7 @@ public class DraftDirector {
 
     }
 
-    private void addAnchorMarker(Position position) {
+    private void addAnchorMarker(Position position, Boolean firstTime) {
         //  取得AnchorMarker與ControlMaker
         final Marker marker = AnchorMarker.getInstance();
         Marker linked = AnchorMarker.getInstance().getLink(); //this link was created by marker.
@@ -345,9 +353,12 @@ public class DraftDirector {
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         String distance_str = edit_text.getText().toString();
+                        Log.d(TAG, "distance string=======================================> " + distance_str);
                         if (distance_str.isEmpty())
                             return;
+
                         ((AnchorMarker) marker).setRealDistance(Double.parseDouble(distance_str));
+                        AnchorMarker.historyDistancesUndo.addLast( Double.parseDouble(distance_str) ); //新增第一個distance至history
                     }
                 })
                 .show();
@@ -356,6 +367,11 @@ public class DraftDirector {
         linked.position.set(new Position(position.x + 50, position.y + 50)); //linked位移(x, y) = (50, 50)
         marker.refreshed_tap_position.set(position);
         linked.refreshed_tap_position.set(new Position(position.x + 50, position.y + 50)); //linked位移(x, y) = (50, 50)
+        ((ControlMarker)linked).setMarker(marker); //tell linked who is his daddy, marker
+
+        marker.historyTapPositionsUndo.addLast(new Position(position.x, position.y));
+        linked.historyTapPositionsUndo.addLast(new Position(position.x + 50, position.y + 50));
+
 
         draft.addMarker(marker); //add to markerList by MarkerManager
         draft.addMarker(linked); //add to markerList by MarkerManager
@@ -383,10 +399,17 @@ public class DraftDirector {
         renderableMap.put(marker, marker_renderer);
         renderableMap.put(linked, link_renderer);
 
-        StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.CREATE));
+        //第一次為Create，之後的皆視為Update
+        if (firstTime) {
+            StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.CREATE));
+        } else {
+            StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.UPDATE));
+        }
+
     }
 
-    private void addAnchorMarker() {
+    //更新Anchor點的位置
+    private void updateAnchorMarker() {
         //  取得AnchorMarker與ControlMaker
         final Marker marker = AnchorMarker.getInstance();
         Marker linked = AnchorMarker.getInstance().getLink(); //this link was created by marker.
@@ -431,7 +454,6 @@ public class DraftDirector {
         renderableMap.put(marker, marker_renderer);
         renderableMap.put(linked, link_renderer);
 
-        StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.CREATE));
     }
 
     public void removeMarker(Marker marker) {
@@ -463,7 +485,7 @@ public class DraftDirector {
                 setLink(linked). //儲存linked marker，並且告知linked誰是他老爸marker
                 build(); //return Marker
 
-        ((ControlMarker)linked).setMarker(marker);
+        ((ControlMarker)linked).setMarker(marker); //tell linked who is his daddy
 
         Log.d(TAG, "linked: (" + linked.refreshed_tap_position.x + ", " + linked.refreshed_tap_position.y + ") marker: (" + marker.refreshed_tap_position.x + ", " + marker.refreshed_tap_position.y + ")");
 
@@ -667,8 +689,8 @@ public class DraftDirector {
 //                temmpLastControlMarker = tempLastMarker;
 //                tempLastMarker = RedoTempLL.pollLast(); //get marker, LinkedList{marker, control}
 //                if (tempLastMarker instanceof AnchorMarker) {
-//                    addAnchorMarker();
-//                    Log.d(TAG, "REDO: addAnchorMarker()");
+//                    updateAnchorMarker();
+//                    Log.d(TAG, "REDO: updateAnchorMarker()");
 //                } else if (tempLastMarker instanceof MeasureMarker) {
 ////                            addMeasureMarker(tempLastMarker.refreshed_tap_position);
 //                    addMeasureMarker(tempLastMarker);
@@ -693,7 +715,11 @@ public class DraftDirector {
                     if (dataMarker instanceof LabelMarker) {
                         Log.d(TAG, "LabelMarker");
                         this.removeMarker(dataMarker);
-                    } else { //MeasureMarker, AnchorMarker
+                    } else if (dataMarker instanceof MeasureMarker){ //MeasureMarker, AnchorMarker
+                        this.removeMarker( ((LinkMarker)dataMarker).getLink() );
+                        this.removeMarker( dataMarker );
+                    } else if (dataMarker instanceof AnchorMarker) {
+                        firstTime = true;
                         this.removeMarker( ((LinkMarker)dataMarker).getLink() );
                         this.removeMarker( dataMarker );
                     }
@@ -731,13 +757,33 @@ public class DraftDirector {
                         ((LinkMarker) dataMarker).getLink().historyTapPositionsRedo.addLast(redoPositionLink); //!!important!! new one Position
                         ((LinkMarker) dataMarker).getLink().refreshed_tap_position.set( ((LinkMarker) dataMarker).getLink().historyTapPositionsUndo.getLast() ); //update tap-position
 
-
                         this.updateMeasureMarker(data);
-
-
 
                     } else if (dataMarker instanceof AnchorMarker) { //AnchorMarker
                         Log.d(TAG, "Undo Update: MeasureMarker");
+                        StepByStepRedo.add(new DataStepByStep(dataMarker, Selectable.CRUD.UPDATE));
+                        this.removeMarker( ((LinkMarker)dataMarker).getLink() );
+                        this.removeMarker( dataMarker );
+
+                        Position redoPositionRef = dataMarker.historyTapPositionsUndo.pollLast(); //give this to redoLL
+                        Position redoPosition = new Position(redoPositionRef.x, redoPositionRef.y);
+                        dataMarker.historyTapPositionsRedo.addLast(redoPosition); //!!important!! new one Position
+                        dataMarker.refreshed_tap_position.set(dataMarker.historyTapPositionsUndo.getLast()); //update tap-position
+
+                        //Linked (ControlMarker)
+                        Position redoPositionRefLink = ((LinkMarker) dataMarker).getLink().historyTapPositionsUndo.pollLast(); //give this to redoLL
+                        Position redoPositionLink = new Position(redoPositionRefLink.x, redoPositionRefLink.y);
+                        ((LinkMarker) dataMarker).getLink().historyTapPositionsRedo.addLast(redoPositionLink); //!!important!! new one Position
+                        ((LinkMarker) dataMarker).getLink().refreshed_tap_position.set( ((LinkMarker) dataMarker).getLink().historyTapPositionsUndo.getLast() ); //update tap-position
+
+                        //deal with Label
+                        double redoDistance = AnchorMarker.historyDistancesUndo.pollLast(); //抓取並刪除history最新distance
+                        AnchorMarker.historyDistancesRedo.addLast(redoDistance);
+
+                        ((AnchorMarker)dataMarker).setRealDistance(AnchorMarker.historyDistancesUndo.getLast()); //還原history裡上一個distance
+
+                        this.updateAnchorMarker();
+
                     }
                     break;
                 case DELETE:
@@ -767,7 +813,7 @@ public class DraftDirector {
                 case UPDATE:
                     //Looking up old data in every marker
                     if (dataMarker instanceof LabelMarker) {
-                        Log.d(TAG, "Update: LabelMarker");
+                        Log.d(TAG, "Redo: Update: LabelMarker");
                         if (!dataMarker.historyTapPositionsRedo.isEmpty()) {
 
                             this.removeMarker(dataMarker); //移除目前的marker，還原至前一位置
@@ -780,7 +826,7 @@ public class DraftDirector {
                         } //if ()
 
                     } else if (dataMarker instanceof MeasureMarker){ //MeasureMarker
-
+                        Log.d(TAG, "Redo: Update: MeasureMarker");
                         this.removeMarker( ((LinkMarker)dataMarker).getLink() );
                         this.removeMarker( dataMarker );
 
@@ -800,6 +846,31 @@ public class DraftDirector {
                         StepByStepUndo.add(new DataStepByStep(dataMarker, Selectable.CRUD.UPDATE));
 
                     } else if (dataMarker instanceof AnchorMarker) { //AnchorMarker
+                        Log.d(TAG, "Redo: Update: AnchorMarker");
+                        this.removeMarker( ((LinkMarker)dataMarker).getLink() );
+                        this.removeMarker( dataMarker );
+
+                        Position redoPositionRef = dataMarker.historyTapPositionsRedo.pollLast(); //give this to redoLL
+                        Position redoPosition = new Position(redoPositionRef.x, redoPositionRef.y);
+                        dataMarker.historyTapPositionsUndo.addLast(redoPosition); //!!important!! new one Position
+                        dataMarker.refreshed_tap_position.set(redoPosition); //update tap-position
+
+                        //Linked (ControlMarker)
+                        Position redoPositionRefLink = ((LinkMarker) dataMarker).getLink().historyTapPositionsRedo.pollLast(); //give this to redoLL
+                        Position redoPositionLink = new Position(redoPositionRefLink.x, redoPositionRefLink.y);
+                        ((LinkMarker) dataMarker).getLink().historyTapPositionsUndo.addLast(redoPositionLink); //!!important!! new one Position
+                        ((LinkMarker) dataMarker).getLink().refreshed_tap_position.set(redoPositionLink ); //update tap-position
+
+                        //deal with Label
+                        double redoDistance = AnchorMarker.historyDistancesRedo.pollLast(); //抓取並刪除history最新distance
+                        AnchorMarker.historyDistancesUndo.addLast(redoDistance);
+
+                        ((AnchorMarker)dataMarker).setRealDistance(redoDistance); //還原history裡上一個distance
+
+                        this.updateAnchorMarker();
+
+                        StepByStepUndo.add(new DataStepByStep(dataMarker, Selectable.CRUD.UPDATE));
+
 
                     }
                     break;
@@ -812,8 +883,17 @@ public class DraftDirector {
                         StepByStepUndo.add(new DataStepByStep(dataMarker, Selectable.CRUD.CREATE));
 
                     } else if (dataMarker instanceof AnchorMarker) { //MeasureMarker, AnchorMarker
-                        this.addAnchorMarker();
+                        if (firstTime) { //重新create, firstTime為true
+                            firstTime = false;
+                            Position premitive = dataMarker.historyTapPositionsUndo.pollLast();
+                            this.addAnchorMarker(new Position(premitive.x, premitive.y), true);
+                            this.updateAnchorMarker();
+                            StepByStepUndo.add(new DataStepByStep(dataMarker, Selectable.CRUD.CREATE));
+                        }
+
                         Log.d(TAG, "REDO: updateAnchorMarker()");
+//                        StepByStepUndo.add(new DataStepByStep(dataMarker, Selectable.CRUD.CREATE));
+
                     } else if (dataMarker instanceof MeasureMarker) {
 //                        addMeasureMarker(dataMarker);
                         this.updateMeasureMarker(data);
@@ -857,7 +937,7 @@ public class DraftDirector {
                 Log.d(TAG, "historySize = (Marker, Linker) = (" + fatherMarker.historyTapPositionsUndo.size() + ", " + markerHold_linkedMarker.historyTapPositionsUndo.size() + ")");
                 Log.d(TAG, "Marker Position = " + fatherMarker.refreshed_tap_position.x + ", " + fatherMarker.refreshed_tap_position.y);
                 Log.d(TAG, "Linker Position = " + markerHold_linkedMarker.refreshed_tap_position.x + ", " + markerHold_linkedMarker.refreshed_tap_position.y);
-                Log.d(TAG, "Undo List: Marker Position = " + markerHold.historyTapPositionsUndo.getLast().x + ", " + markerHold.historyTapPositionsUndo.getLast().y);
+                Log.d(TAG, "Undo List: Marker Position = " + fatherMarker.historyTapPositionsUndo.getLast().x + ", " + fatherMarker.historyTapPositionsUndo.getLast().y);
                 Log.d(TAG, "Undo List: Linker Position = " + markerHold_linkedMarker.historyTapPositionsUndo.getLast().x + ", " + markerHold_linkedMarker.historyTapPositionsUndo.getLast().y);Log.d(TAG, "-----------------------------------------------------------------------------");
 
             } else if (markerHold instanceof MeasureMarker) {
@@ -880,6 +960,26 @@ public class DraftDirector {
             } else if (markerHold instanceof AnchorMarker) {
                 //AnchorMarker
                 Log.d(TAG, "#### Release AnchorMarker ####");
+                final Marker marker = AnchorMarker.getInstance();
+                Marker markerHold_linkedMarker = AnchorMarker.getInstance().getLink(); //this link was created by marker.
+
+//                Marker markerHold_linkedMarker = ((AnchorMarker) markerHold).getLink();
+                DataStepByStep update = new DataStepByStep(marker, Selectable.CRUD.UPDATE);
+                marker.historyTapPositionsUndo.addLast(new Position(marker.refreshed_tap_position.x, marker.refreshed_tap_position.y)); //把最新位置新增至LinkedList最後
+                markerHold_linkedMarker.historyTapPositionsUndo.addLast(new Position(markerHold_linkedMarker.historyTapPositionsUndo.getLast().x, markerHold_linkedMarker.historyTapPositionsUndo.getLast().y)); //copy original
+
+                AnchorMarker.historyDistancesUndo.addLast(AnchorMarker.historyDistancesUndo.getLast());
+
+                Log.d(TAG, "historySize = (Marker, Linker, Distance) = (" + markerHold.historyTapPositionsUndo.size() + ", " + markerHold_linkedMarker.historyTapPositionsUndo.size() + ", " + AnchorMarker.historyDistancesUndo.size() + ")");
+                Log.d(TAG, "Marker Position = " + markerHold.refreshed_tap_position.x + ", " + markerHold.refreshed_tap_position.y);
+                Log.d(TAG, "Linker Position = " + markerHold_linkedMarker.refreshed_tap_position.x + ", " + markerHold_linkedMarker.refreshed_tap_position.y);
+                Log.d(TAG, "Undo List: Marker Position = " + markerHold.historyTapPositionsUndo.getLast().x + ", " + markerHold.historyTapPositionsUndo.getLast().y);
+                Log.d(TAG, "Undo List: Linker Position = " + markerHold_linkedMarker.historyTapPositionsUndo.getLast().x + ", " + markerHold_linkedMarker.historyTapPositionsUndo.getLast().y);
+                Log.d(TAG, "The latest distance = " + AnchorMarker.historyDistancesUndo.getLast());
+                Log.d(TAG, "-----------------------------------------------------------------------------");
+                StepByStepUndo.add(update);//update the last location of marker
+                Log.d(TAG, "StepByStepUndo Size: " + StepByStepUndo.size());
+
 
             } else if (markerHold instanceof LabelMarker) {
                 //LabelMarker

@@ -62,6 +62,7 @@ public class MotionHandler {
                         if ( marker instanceof LinkMarker)
                             director.RedoTempLL.add( ((LinkMarker)marker).getLink() );
 
+
 //                        director.removeMarker(marker);
 //                        director.removeMarker( ((LinkMarker)marker).getLink() );
 

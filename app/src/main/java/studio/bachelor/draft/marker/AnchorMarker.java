@@ -4,6 +4,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import java.util.LinkedList;
+
 import studio.bachelor.draft.utility.MapStringSupport;
 import studio.bachelor.draft.utility.Position;
 
@@ -14,6 +16,8 @@ public class AnchorMarker extends LinkMarker implements MapStringSupport {
     static private final AnchorMarker instance = new AnchorMarker();
     static public AnchorMarker getInstance() {return instance;}
     private double realDistance;
+    public static LinkedList<Double> historyDistancesUndo = new LinkedList<Double>();
+    public static LinkedList<Double> historyDistancesRedo = new LinkedList<Double>();
 
     private AnchorMarker() {
         super();
