@@ -5,15 +5,10 @@ import android.util.Log;
 import android.widget.Toast;
 
 import studio.bachelor.draft.DraftDirector;
-import studio.bachelor.draft.marker.AnchorMarker;
-import studio.bachelor.draft.marker.LabelMarker;
 import studio.bachelor.draft.marker.LinkMarker;
 import studio.bachelor.draft.marker.Marker;
-import studio.bachelor.draft.marker.MeasureMarker;
 import studio.bachelor.draft.toolbox.Toolbox;
-import studio.bachelor.draft.utility.DataStepByStep;
 import studio.bachelor.draft.utility.Position;
-import studio.bachelor.draft.utility.Selectable;
 import studio.bachelor.muninn.Muninn;
 
 /**
@@ -63,16 +58,14 @@ public class MotionHandler {
                 if(director.getTool() == Toolbox.Tool.DELETER) {
                     Log.d(TAG, "Delete Marker");
                     if(marker != null) {
-                        if ( marker instanceof MeasureMarker) {
+                        director.RedoTempLL.add(marker);
+                        if ( marker instanceof LinkMarker)
+                            director.RedoTempLL.add( ((LinkMarker)marker).getLink() );
 
 
-                        } else if ( marker instanceof AnchorMarker) {
+//                        director.removeMarker(marker);
+//                        director.removeMarker( ((LinkMarker)marker).getLink() );
 
-                        } else if ( marker instanceof LabelMarker) {
-
-                        }
-
-                        DraftDirector.StepByStepUndo.addLast(new DataStepByStep(marker, Selectable.CRUD.DELETE));
                         marker.remove();
                     }
 

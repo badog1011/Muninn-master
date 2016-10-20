@@ -645,62 +645,16 @@ public class DraftDirector {
                 this.markerType = LabelMarker.class;
                 break;
             case EDIT_UNDO:
-                doUndoTask2();
+                doUndoTask();
                 break;
             case EDIT_REDO:
-                doRedoTask2();
+                doRedoTask();
                 break;
         }
     }
 
-//    private void doUndoTask() {
-//
-//        Log.d(TAG, "EDIT_UNDO====================================");
-//        Marker tempLastMarker = draft.layer.markerManager.getLastMaker();
-//        Marker temmpLastControlMarker = null;
-//        if (tempLastMarker != null)
-//        if (tempLastMarker instanceof LabelMarker) {
-//            RedoTempLL.add(tempLastMarker);
-//            removeMarker(tempLastMarker); //Remove marker Marker
-//            Log.d(TAG, "LabelMarker");
-//        } else { //MeasureMarker and AnchorMarker
-//            // Remove linked Marker LinkedList{marker, control}
-//            tempLastMarker = draft.layer.markerManager.getPenultimateMarker(); //marker，倒數第二
-//            RedoTempLL.add(tempLastMarker);
-//            removeMarker(tempLastMarker);//Remove marker Marker
-//
-//            tempLastMarker = draft.layer.markerManager.getLastMaker(); //control
-//            RedoTempLL.add(tempLastMarker);
-//            removeMarker(tempLastMarker); //Remove marker Control(Linked)
-//            Log.d(TAG, "LinkMarker");
-//        }
-//    }
 
-//    private void doRedoTask() {
-//        Log.d(TAG, "EDIT_REDO====================================");
-//        Marker tempLastMarker = draft.layer.markerManager.getLastMaker();
-//        Marker temmpLastControlMarker = null;
-//        if (!RedoTempLL.isEmpty()) {
-//            tempLastMarker = RedoTempLL.pollLast(); //get control, LinkedList{marker, control}
-//            if (tempLastMarker instanceof LabelMarker) {
-//                addLabelMarkerRedo(tempLastMarker);
-//                Log.d(TAG, "REDO: addLabelMarker()");
-//            } else {  //MeasureMarker or AnchorMarker
-//                temmpLastControlMarker = tempLastMarker;
-//                tempLastMarker = RedoTempLL.pollLast(); //get marker, LinkedList{marker, control}
-//                if (tempLastMarker instanceof AnchorMarker) {
-//                    updateAnchorMarker();
-//                    Log.d(TAG, "REDO: updateAnchorMarker()");
-//                } else if (tempLastMarker instanceof MeasureMarker) {
-////                            addMeasureMarker(tempLastMarker.refreshed_tap_position);
-//                    addMeasureMarker(tempLastMarker);
-//                    Log.d(TAG, "REDO: addMeasureMarker()");
-//                }
-//            }
-//        }
-//    }
-
-    private void doUndoTask2() {
+    private void doUndoTask() {
 
         Log.d(TAG, "EDIT_UNDO2====================================");
         if (!StepByStepUndo.isEmpty()) { //不為空
@@ -710,7 +664,7 @@ public class DraftDirector {
 
             switch (data.getCRUDstate()) {
                 case CREATE:
-                    //do delete();
+                    //do delete
                     StepByStepRedo.add(new DataStepByStep(dataMarker, Selectable.CRUD.DELETE));
                     if (dataMarker instanceof LabelMarker) {
                         Log.d(TAG, "LabelMarker");
@@ -788,6 +742,19 @@ public class DraftDirector {
                     break;
                 case DELETE:
                     //do re-create()
+                    if ( dataMarker instanceof MeasureMarker) {
+                        this.updateMeasureMarker(data);
+                        StepByStepRedo.add(new DataStepByStep(dataMarker, Selectable.CRUD.CREATE));
+
+                    } else if ( dataMarker instanceof AnchorMarker) {
+                        this.updateAnchorMarker();
+                        StepByStepRedo.add(new DataStepByStep(dataMarker, Selectable.CRUD.CREATE));
+
+                    } else if ( dataMarker instanceof LabelMarker) {
+                        this.updateLabelMarker(data);
+                        StepByStepRedo.add(new DataStepByStep(dataMarker, Selectable.CRUD.CREATE));
+
+                    }
                     break;
             }
         }
@@ -797,7 +764,7 @@ public class DraftDirector {
     }
 
 
-    private void doRedoTask2() {
+    private void doRedoTask() {
         Log.d(TAG, "EDIT_REDO2====================================");
 
         if (!StepByStepRedo.isEmpty()) { //不為空
@@ -807,7 +774,20 @@ public class DraftDirector {
 
             switch (data.getCRUDstate()) {
                 case CREATE:
-                    //do create();
+                    //do delete();
+                    StepByStepUndo.add(new DataStepByStep(dataMarker, Selectable.CRUD.DELETE));
+                    if (dataMarker instanceof LabelMarker) {
+                        Log.d(TAG, "LabelMarker");
+                        this.removeMarker(dataMarker);
+                    } else if (dataMarker instanceof MeasureMarker){ //MeasureMarker, AnchorMarker
+                        this.removeMarker( ((LinkMarker)dataMarker).getLink() );
+                        this.removeMarker( dataMarker );
+                    } else if (dataMarker instanceof AnchorMarker) {
+                        firstTime = true;
+                        this.removeMarker( ((LinkMarker)dataMarker).getLink() );
+                        this.removeMarker( dataMarker );
+                    }
+
 
                     break;
                 case UPDATE:
@@ -878,7 +858,6 @@ public class DraftDirector {
                     //do Re-create()
                     if (dataMarker instanceof LabelMarker) {
                         Log.d(TAG, "REDO: updateLabelMarker()");
-//                        this.addLabelMarkerRedo(data);
                         this.updateLabelMarker(data); //在Redo中使用update來create舊的marker，避免新增新的marker!!若新創marker，會造成後面update與這有關的marker刪除不了之。
                         StepByStepUndo.add(new DataStepByStep(dataMarker, Selectable.CRUD.CREATE));
 
@@ -892,13 +871,12 @@ public class DraftDirector {
                         }
 
                         Log.d(TAG, "REDO: updateAnchorMarker()");
-//                        StepByStepUndo.add(new DataStepByStep(dataMarker, Selectable.CRUD.CREATE));
 
                     } else if (dataMarker instanceof MeasureMarker) {
-//                        addMeasureMarker(dataMarker);
                         this.updateMeasureMarker(data);
                         Log.d(TAG, "REDO: updateMeasureMarker()");
                         StepByStepUndo.add(new DataStepByStep(dataMarker, Selectable.CRUD.CREATE));
+
                     }
                     break;
             }
