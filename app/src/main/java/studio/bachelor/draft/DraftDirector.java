@@ -731,12 +731,12 @@ public class DraftDirector {
                         ((LinkMarker) dataMarker).getLink().refreshed_tap_position.set( ((LinkMarker) dataMarker).getLink().historyTapPositionsUndo.getLast() ); //update tap-position
 
                         //deal with Label
-                        double redoDistance = AnchorMarker.historyDistancesUndo.pollLast(); //抓取並刪除history最新distance
-                        AnchorMarker.historyDistancesRedo.addLast(redoDistance);
-
-                        ((AnchorMarker)dataMarker).setRealDistance(AnchorMarker.historyDistancesUndo.getLast()); //還原history裡上一個distance
-
-                        this.updateAnchorMarker();
+                        if (AnchorMarker.historyDistancesUndo.size() > 1) { //防呆避免underflow
+                            double redoDistance = AnchorMarker.historyDistancesUndo.pollLast(); //抓取並刪除history最新distance
+                            AnchorMarker.historyDistancesRedo.addLast(redoDistance);
+                            ((AnchorMarker)dataMarker).setRealDistance(AnchorMarker.historyDistancesUndo.getLast()); //還原history裡上一個distance
+                            this.updateAnchorMarker();
+                        }
 
                     }
                     break;
@@ -909,6 +909,9 @@ public class DraftDirector {
                 fatherMarker.historyTapPositionsUndo.addLast(new Position(fatherMarker.historyTapPositionsUndo.getLast().x, fatherMarker.historyTapPositionsUndo.getLast().y)); //把最新位置新增至LinkedList最後
                 markerHold_linkedMarker.historyTapPositionsUndo.addLast(new Position(markerHold_linkedMarker.refreshed_tap_position.x, markerHold_linkedMarker.refreshed_tap_position.y)); //copy original
 
+                if (fatherMarker instanceof AnchorMarker) {
+                    AnchorMarker.historyDistancesUndo.addLast(AnchorMarker.historyDistancesUndo.getLast());
+                }
                 StepByStepUndo.add(update);//update the last location of marker
                 Log.d(TAG, "StepByStepUndo Size: " + StepByStepUndo.size());
 
