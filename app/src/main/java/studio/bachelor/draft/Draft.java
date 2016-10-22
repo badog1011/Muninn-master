@@ -42,7 +42,7 @@ public class Draft{
 
     private Draft() {
 
-    };
+    }
 
     public void setWidth(double width) {
         this.width = width;

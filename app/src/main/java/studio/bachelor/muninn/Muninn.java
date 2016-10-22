@@ -19,12 +19,16 @@ public class Muninn extends Application {
     private static Context context;
     private static SharedPreferences sharedPreferences;
     static public MediaPlayer soundPlayer;
+    static public MediaPlayer sound_Punch;
+    static public MediaPlayer sound_Ding;
 
     public void onCreate() {
         super.onCreate();
         context = this;
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         soundPlayer = MediaPlayer.create(this, Settings.System.DEFAULT_NOTIFICATION_URI);
+        sound_Punch = MediaPlayer.create(this,R.raw.punch);
+        sound_Ding = MediaPlayer.create(this,R.raw.ding);
     }
 
     public static Context getContext() {

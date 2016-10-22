@@ -127,13 +127,13 @@ public class DraftDirector {
         //birdViewUri = uri;
         try {
             birdview = MediaStore.Images.Media.getBitmap(Muninn.getContext().getContentResolver(), uri);
-            MD5Encoder = new BitmapMD5Encoder(birdview);
-            MD5EncoderThread = new Thread(MD5Encoder);
+            MD5Encoder = new BitmapMD5Encoder(birdview); //建立Runnable類別，依據BitMap圖檔編碼MD5
+            MD5EncoderThread = new Thread(MD5Encoder); //建立Thread
             MD5EncoderThread.start();
         } catch (Exception e) {
             Log.d("DraftRenderer", "setBirdview(Uri uri)" + e.toString());
         }
-        draftRenderer.setBirdview(birdview);
+        draftRenderer.setBirdview(birdview); //設定選取好的圖片
         draft.setWidth(birdview.getWidth()); //setting the width-size of draft according to the birdview.
         draft.setHeight(birdview.getHeight());
     }
@@ -631,7 +631,7 @@ public class DraftDirector {
 
     public void selectTool(Toolbox.Tool tool) {
         if (tool == Toolbox.Tool.CLEAR_PATH)
-            draft.clearPaths();
+            draft.clearPaths(); //清除草稿線(PATH_MODE)
         else
             this.tool = tool; //assigned selected component
         switch (tool) {

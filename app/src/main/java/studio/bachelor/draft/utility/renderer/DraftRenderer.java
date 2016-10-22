@@ -23,7 +23,7 @@ public class DraftRenderer implements Renderable {
     private Draft draft;
     private Bitmap birdview;
     private final Paint paint = new Paint(); //for image
-    private final Paint pathPaint = new Paint(); //for path
+    private final Paint pathPaint = new Paint(); //for path(草稿線)
 
     { //path會依據Paint的設定，呈現不同線條
         pathPaint.setStrokeCap(Paint.Cap.ROUND);
@@ -52,16 +52,16 @@ public class DraftRenderer implements Renderable {
     }
 
     public void onDraw(Canvas canvas) {
-        Position translate = draft.layer.getTranslate();
+        Position translate = draft.layer.getTranslate();//?Jonas
         float scale = draft.layer.getScale();
-        canvas.translate((float)translate.x, (float)translate.y);
+        canvas.translate((float)translate.x, (float)translate.y);//?Jonas
         canvas.scale(scale, scale);
         if(birdview != null)
             canvas.drawBitmap(birdview, -birdview.getWidth() / 2, -birdview.getHeight() / 2, paint);
 
         Path current_path = draft.getCurrentPath();
         if(current_path != null)
-            canvas.drawPath(current_path, pathPaint);
+            canvas.drawPath(current_path, pathPaint);//?Jonas
 
         List<Path> paths = draft.getPaths();
         for(Path path : paths)

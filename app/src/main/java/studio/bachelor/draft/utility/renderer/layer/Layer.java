@@ -52,7 +52,7 @@ public class Layer{
         return centerOffset;
     }
 
-    public Position getTranslate() {
+    public Position getTranslate() { //中心點的總位移
         return new Position(center.x + centerOffset.x, center.y + centerOffset.y);
     }
 

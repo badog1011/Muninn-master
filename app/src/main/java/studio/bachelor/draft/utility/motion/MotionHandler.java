@@ -80,8 +80,13 @@ public class MotionHandler {
                 director.addMarker(position_first);
                 break;
             case SINGLE_TAP:
-                if(tool != null)
+                if(tool != null) {
+                    Muninn.sound_Ding.seekTo(0); //重至0毫秒
+                    Muninn.sound_Ding.start();
                     director.selectTool(tool);
+
+                }
+
                 break;
             case PINCH_IN:
                 director.zoomDraft(0.05f);

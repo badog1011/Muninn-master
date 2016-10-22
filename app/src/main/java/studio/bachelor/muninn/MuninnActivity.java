@@ -57,6 +57,14 @@ public class MuninnActivity extends AppCompatActivity {
                 switchToZIPBrowsing();
             }
         });
+        findViewById(R.id.btnSound).setSoundEffectsEnabled(false);//不履行預設button音效
+        findViewById(R.id.btnSound).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Muninn.sound_Ding.seekTo(0);
+                Muninn.sound_Ding.start();
+            }
+        });
     }
 
     private void swithcToGallery() {
