@@ -164,6 +164,32 @@ public class DraftDirector {
         }
     }
 
+    private Position prevLayerPosition = new Position();
+    private boolean enableMoving = false;
+
+    public void moveLayerCreate(Position p) {
+        if (getTool() != Toolbox.Tool.PATH_MODE && enableMoving == false) {
+            enableMoving = true;
+            prevLayerPosition.set(p);
+        }
+
+    }
+
+    public void moveLayerStart(Position p) {
+        if (enableMoving && markerHold == null) {
+            double x = p.x - prevLayerPosition.x;
+            double y = p.y - prevLayerPosition.y;
+            Position offset = new Position(x, y);
+            moveDraft(offset);
+            prevLayerPosition.set(p);
+        }
+
+    }
+
+    public void moveLayerStop() {
+            enableMoving = false;
+    }
+
     public void addMarker(Position position) {
         if (markerType == MeasureMarker.class) {
             addMeasureMarker(position);
@@ -1015,7 +1041,7 @@ public class DraftDirector {
     public void moveHoldMarker(Position position) {
         if (this.markerHold != null) {
             draft.moveMarker(markerHold, position);
-            markerHold.refreshed_tap_position = position; //儲存marker移動的位置(螢幕點選的位置)
+            markerHold.refreshed_tap_position = position; //儲存marker移動的位置(螢幕點選的位置)//?Jonas
         }
     }
 

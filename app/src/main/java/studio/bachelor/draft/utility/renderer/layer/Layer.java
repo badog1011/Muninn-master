@@ -1,5 +1,7 @@
 package studio.bachelor.draft.utility.renderer.layer;
 
+import android.util.Log;
+
 import studio.bachelor.draft.marker.Marker;
 import studio.bachelor.draft.marker.MarkerManager;
 import studio.bachelor.draft.utility.Position;
@@ -8,6 +10,7 @@ import studio.bachelor.draft.utility.Position;
  * Created by BACHELOR on 2016/03/03.
  */
 public class Layer{
+    private String TAG = this.getClass().toString();
     private float width;
     private float height;
     private final Position center;
@@ -15,8 +18,10 @@ public class Layer{
     public final MarkerManager markerManager = new MarkerManager();
 
     public Position getPositionOfLayer(final Position screen_position) {
+        Log.d(TAG, "(getPositionOfLayer) center: (" + center.x + ", " + center.y + ")");
         double x = screen_position.x - center.x;
         double y = screen_position.y - center.y;
+        Log.d(TAG, "(getPositionOfLayer) (x,y): (" + x + ", " + y + ")");
         return new Position(x, y);
     }
 
@@ -24,12 +29,14 @@ public class Layer{
         this.height = height;
         this.width = width;
         center = new Position(width / 2, height / 2);
+        Log.d(TAG, "Layer) center: (" + center.x + ", " + center.y + ")");
     }
 
     public void setWidthAndHeight(float width, float height) { //包含Marker位置
         this.height = height;
         this.width = width;
         center.set(new Position(this.width / 2, this.height / 2));
+        Log.d(TAG, "setWidthAndHeight) center: (" + center.x + ", " + center.y + ")");
         for(Marker marker : markerManager.markers) {
             marker.position.set(getPositionOfLayer(marker.position));
         }

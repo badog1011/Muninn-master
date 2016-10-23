@@ -44,14 +44,18 @@ public class MotionHandler {
     public void postMotion(Motion motion, Toolbox.Tool tool, Marker marker, Position position_first, Position position_second) {
         switch (motion) {
             case DOWN:
-                director.createPathIfPathMode(position_first);
+                director.createPathIfPathMode(position_first); //for PATH_MODE
+                if (tool == null && marker == null) //當沒有選到tool與marker視為移動layer
+                    director.moveLayerCreate(position_first);
                 break;
             case MOVE:
                 director.moveHoldMarker(position_first);
-                director.recordPath(position_first);
+                director.recordPath(position_first); //for PATH_MODE
+                director.moveLayerStart(position_first); //移動整個Layer
                 break;
             case UP:
-                director.endPath(position_first);
+                director.endPath(position_first); //for PATH_MODE
+                director.moveLayerStop();
                 director.releaseMarker();
                 director.deselectMarker();
                 break;

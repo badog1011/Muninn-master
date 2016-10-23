@@ -64,7 +64,7 @@ public class DraftRenderer implements Renderable {
             canvas.drawPath(current_path, pathPaint);//?Jonas
 
         List<Path> paths = draft.getPaths();
-        for(Path path : paths)
+        for(Path path : paths) //show all the gesture paths
             canvas.drawPath(path, pathPaint);
     }
 }

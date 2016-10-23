@@ -28,6 +28,7 @@ import studio.bachelor.muninn.Muninn;
  * Created by BACHELOR on 2016/02/24.
  */
 public class Draft{
+    private final String TAG = "Draft";
     private static final Draft instance = new Draft();
     public final ScaleLayer layer = new ScaleLayer(0, 0);
     public double scale = 1.0;
@@ -93,6 +94,7 @@ public class Draft{
     public void addMarker(Marker marker) {
         Position tempPosition = getDraftPosition(marker.position); //return new Position
         marker.position.set(tempPosition); //取得Screen上的真實位置
+        Log.d(TAG, "addMarker getDraftPosition(): (" + tempPosition.x + ", " + tempPosition.y + ")");
 //        marker.refreshed_tap_position.set(tempPosition);
         layer.markerManager.addMarker(marker);
     }
