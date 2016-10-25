@@ -95,21 +95,13 @@ public class Draft{
         Position tempPosition = getDraftPosition(marker.position); //return new Position
         marker.position.set(tempPosition); //取得Screen上的真實位置
         Log.d(TAG, "addMarker getDraftPosition(): (" + tempPosition.x + ", " + tempPosition.y + ")");
-//        marker.refreshed_tap_position.set(tempPosition);
         layer.markerManager.addMarker(marker);
     }
 
-    public void addMarkerWithAbos(Marker marker) {
-        Position tempPosition = getDraftPosition(marker.position); //return new Position
-        marker.position.set(tempPosition); //取得Screen上的真實位置
-//        marker.refreshed_tap_position.set(tempPosition);
+    public void addMarkerLayerPosition(Marker marker) { //根據實際Layer的位置呈現marker
         layer.markerManager.addMarker(marker);
     }
 
-//    public void addMarkerToLast(Marker marker) {
-//        marker.position.set(getDraftPosition(marker.position));
-//        layer.markerManager.addMarker(marker);
-//    }
 
     public void removeMarker(Marker marker) {
         marker.position.set(getDraftPosition(marker.position)); //?Jonas get the marker's position on screen.
@@ -123,7 +115,7 @@ public class Draft{
         }
     }
 
-    private Position getDraftPosition(Position position) {
+    public Position getDraftPosition(Position position) {
         return layer.getPositionOfLayer(position);
     }
 

@@ -27,6 +27,10 @@ public abstract class Marker implements Lockable, Touchable, Selectable, Removab
     public LinkedList<Position> historyTapPositionsUndo = new LinkedList<Position>();
     public LinkedList<Position> historyTapPositionsRedo = new LinkedList<Position>();
 
+    public Position refreshed_Layer_position = new Position();
+    public LinkedList<Position> historyLayerPositionsUndo = new LinkedList<Position>();
+    public LinkedList<Position> historyLayerPositionsRedo = new LinkedList<Position>();
+
     protected static DraftDirector director = DraftDirector.instance;
     private boolean locked = false;
     private int ID;

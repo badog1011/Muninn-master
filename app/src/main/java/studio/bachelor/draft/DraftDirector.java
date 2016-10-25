@@ -236,6 +236,12 @@ public class DraftDirector {
 
         draft.addMarker(marker);
 
+        marker.refreshed_Layer_position.set(marker.position);
+        marker.historyLayerPositionsUndo.add(new Position(marker.refreshed_Layer_position.x, marker.refreshed_Layer_position.y)); //After getting Layer-position
+        Log.d(TAG, "marker.position = (" + marker.position.x + ", " + marker.position.y + ")");
+        Log.d(TAG, "marker.refreshed_Layer_position = (" + marker.refreshed_Layer_position.x + ", " + marker.refreshed_Layer_position.y + ")");
+        Log.d(TAG, "historyLayerPositionsUndo = (" + marker.historyLayerPositionsUndo.getLast().x + ", " + marker.historyTapPositionsUndo.getLast().y + ")");
+
         //  建立MakerRenderer
         MarkerRendererBuilder mrb = new MarkerRendererBuilder();
         Renderable marker_renderer = mrb.
@@ -252,83 +258,6 @@ public class DraftDirector {
         StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.CREATE));
     }
 
-    private void addLabelMarkerRedo(DataStepByStep data) {
-        Marker tMarker = data.getMarker();
-        Selectable.CRUD state = data.getCRUDstate();
-        Position primitive = new Position(tMarker.refreshed_tap_position.x, tMarker.refreshed_tap_position.y);
-        LabelMarkerBuilder lb = new LabelMarkerBuilder();
-        final Marker marker = lb.
-                setPosition(new Position(tMarker.refreshed_tap_position.x, tMarker.refreshed_tap_position.y)).
-//                setPosition(this.draft.layer.getPositionOfLayer(primitive)).
-                build();
-        Log.d(TAG, "primitive: (" + primitive.x + ", " + primitive.y );
-//        marker.position.set(this.draft.layer.getPositionOfLayer(marker.position));
-
-        final EditText edit_text = new EditText(context);
-        ((LabelMarker) marker).setLabel(((LabelMarker) tMarker).getLabel());
-
-        draft.addMarker(marker);
-
-        //  建立MakerRenderer
-        MarkerRendererBuilder mrb = new MarkerRendererBuilder();
-        Renderable marker_renderer = mrb.
-                setReference(marker).
-                setPoint(marker).
-                setText(new MapString((LabelMarker) marker), marker.position).
-                build();
-
-        rendererManager.addRenderer(marker_renderer);
-
-        //  建立對應關係
-        renderableMap.put(marker, marker_renderer);
-
-
-        if (state == Selectable.CRUD.UPDATE){
-            StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.UPDATE));
-        }
-        else {
-            StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.CREATE));
-        }
-    }
-
-    private void addLabelMarkerRedo2(DataStepByStep data) {
-        Marker tMarker = data.getMarker();
-        Selectable.CRUD state = data.getCRUDstate();
-        Position primitive = new Position(tMarker.refreshed_tap_position.x, tMarker.refreshed_tap_position.y);
-        LabelMarkerBuilder lb = new LabelMarkerBuilder();
-        final Marker marker = lb.
-                setPosition(new Position(tMarker.refreshed_tap_position.x, tMarker.refreshed_tap_position.y)).
-//                setPosition(this.draft.layer.getPositionOfLayer(primitive)).
-        build();
-        Log.d(TAG, "primitive: (" + primitive.x + ", " + primitive.y );
-//        marker.position.set(this.draft.layer.getPositionOfLayer(marker.position));
-
-        final EditText edit_text = new EditText(context);
-        ((LabelMarker) marker).setLabel(((LabelMarker) tMarker).getLabel());
-
-        draft.addMarker(marker);
-
-        //  建立MakerRenderer
-        MarkerRendererBuilder mrb = new MarkerRendererBuilder();
-        Renderable marker_renderer = mrb.
-                setReference(marker).
-                setPoint(marker).
-                setText(new MapString((LabelMarker) marker), marker.position).
-                build();
-
-        rendererManager.addRenderer(marker_renderer);
-
-        //  建立對應關係
-        renderableMap.put(marker, marker_renderer);
-
-
-        if (state == Selectable.CRUD.UPDATE){
-            StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.UPDATE));
-        }
-        else {
-            StepByStepUndo.add(new DataStepByStep(marker, Selectable.CRUD.CREATE));
-        }
-    }
 
     //2016/10/17 By Jonas
     private void updateLabelMarker(DataStepByStep data) {
@@ -338,11 +267,11 @@ public class DraftDirector {
             rendererManager.removeRenderer(renderableMap.get(tMarker));
         }
 
-        tMarker.position.set(tMarker.refreshed_tap_position);
+        tMarker.position.set(tMarker.refreshed_Layer_position);
 
         ((LabelMarker) tMarker).setLabel(((LabelMarker) tMarker).getLabel());
 
-        draft.addMarker(tMarker);
+        draft.addMarkerLayerPosition(tMarker);
 
         //  建立MakerRenderer
         MarkerRendererBuilder mrb = new MarkerRendererBuilder();
@@ -709,15 +638,16 @@ public class DraftDirector {
                     //Looking up old data
                     if (dataMarker instanceof LabelMarker) {
                         Log.d(TAG, "Undo Update: LabelMarker");
-                        if (dataMarker.historyTapPositionsUndo.size() > 1) { //第一個是原始位置
+                        Log.d(TAG, "historyLayerPositionsUndo.size(): " + dataMarker.historyLayerPositionsUndo.size());
+                        if (dataMarker.historyLayerPositionsUndo.size() > 1) { //第一個是原始位置
                             StepByStepRedo.add(new DataStepByStep(dataMarker, Selectable.CRUD.UPDATE));
                             this.removeMarker(dataMarker); //刪掉最新的位置renderer，還原前一位置
-                            Position redoPositionRef = dataMarker.historyTapPositionsUndo.pollLast(); //give this to redoLL
+
+                            Position redoPositionRef = dataMarker.historyLayerPositionsUndo.pollLast(); //give this to redoLL
                             Position redoPosition = new Position(redoPositionRef.x, redoPositionRef.y);
-                            dataMarker.historyTapPositionsRedo.addLast(redoPosition); //!!important!! new one Position
-                            dataMarker.refreshed_tap_position.set(dataMarker.historyTapPositionsUndo.getLast()); //update tap-position
+                            dataMarker.historyLayerPositionsRedo.addLast(redoPosition); //!!important!! new one Position
+                            dataMarker.refreshed_Layer_position.set(dataMarker.historyLayerPositionsUndo.getLast()); //update tap-position
                             this.updateLabelMarker(data);
-//                            Log.d(TAG, "Update: redoPosition: " + dataMarker.historyTapPositionsRedo.getLast().x + ", " + dataMarker.historyTapPositionsRedo.getLast().y);
                         }
 
                     } else if (dataMarker instanceof MeasureMarker) { //MeasureMarker
@@ -820,13 +750,14 @@ public class DraftDirector {
                     //Looking up old data in every marker
                     if (dataMarker instanceof LabelMarker) {
                         Log.d(TAG, "Redo: Update: LabelMarker");
-                        if (!dataMarker.historyTapPositionsRedo.isEmpty()) {
+                        if (!dataMarker.historyLayerPositionsRedo.isEmpty()) {
 
                             this.removeMarker(dataMarker); //移除目前的marker，還原至前一位置
-                            Position undoPositionRef = dataMarker.historyTapPositionsRedo.pollLast();
+
+                            Position undoPositionRef = dataMarker.historyLayerPositionsRedo.pollLast();
                             Position undoPosition = new Position(undoPositionRef.x, undoPositionRef.y);
-                            dataMarker.historyTapPositionsUndo.addLast(undoPosition);
-                            dataMarker.refreshed_tap_position.set(undoPosition); //update tap-position
+                            dataMarker.historyLayerPositionsUndo.addLast(undoPosition);
+                            dataMarker.refreshed_Layer_position.set(undoPosition); //update tap-position
                             this.updateLabelMarker(data);
                             StepByStepUndo.add(new DataStepByStep(dataMarker, Selectable.CRUD.UPDATE));
                         } //if ()
@@ -991,13 +922,20 @@ public class DraftDirector {
             } else if (markerHold instanceof LabelMarker) {
                 //LabelMarker
                 Log.d(TAG, "#### Release LabelMarker ####");
+//                DataStepByStep update = new DataStepByStep(markerHold, Selectable.CRUD.UPDATE);
+//                markerHold.historyTapPositionsUndo.addLast(new Position(markerHold.refreshed_tap_position.x, markerHold.refreshed_tap_position.y)); //把最新位置新增至LinkedList最後
+//                Log.d(TAG, "historyIndex = " + markerHold.historyTapPositionsUndo.size());
+//                Log.d(TAG, "new Position = " + markerHold.refreshed_tap_position.x + "," + markerHold.refreshed_tap_position.y);
+//                StepByStepUndo.add(update);//update the last location of marker
+//                Log.d(TAG, "StepByStepUndo Size: " + StepByStepUndo.size());
+
                 DataStepByStep update = new DataStepByStep(markerHold, Selectable.CRUD.UPDATE);
-                markerHold.historyTapPositionsUndo.addLast(new Position(markerHold.refreshed_tap_position.x, markerHold.refreshed_tap_position.y)); //把最新位置新增至LinkedList最後
-                Log.d(TAG, "historyIndex = " + markerHold.historyTapPositionsUndo.size());
-                Log.d(TAG, "new Position = " + markerHold.refreshed_tap_position.x + "," + markerHold.refreshed_tap_position.y);
+                markerHold.refreshed_Layer_position.set(draft.getDraftPosition(new Position(markerHold.refreshed_tap_position.x, markerHold.refreshed_tap_position.y)));
+                markerHold.historyLayerPositionsUndo.addLast(new Position(markerHold.refreshed_Layer_position.x, markerHold.refreshed_Layer_position.y)); //把最新位置新增至LinkedList最後
+                Log.d(TAG, "historyLayerPositionsUndo Size = " + markerHold.historyLayerPositionsUndo.size());
+                Log.d(TAG, "new Position = " + markerHold.refreshed_Layer_position.x + "," + markerHold.refreshed_Layer_position.y);
                 StepByStepUndo.add(update);//update the last location of marker
                 Log.d(TAG, "StepByStepUndo Size: " + StepByStepUndo.size());
-
             }
 
 
