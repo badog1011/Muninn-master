@@ -64,6 +64,8 @@ public class MotionHandler {
                 if(director.getTool() == Toolbox.Tool.DELETER) {
                     Log.d(TAG, "Delete Marker");
                     if(marker != null) {
+                        Muninn.sound_Punch.seekTo(0); //重至0毫秒
+                        Muninn.sound_Punch.start();
                         DraftDirector.StepByStepUndo.addLast(new DataStepByStep(marker, Selectable.CRUD.DELETE));
 
                         marker.remove();
@@ -85,17 +87,17 @@ public class MotionHandler {
                 break;
             case SINGLE_TAP:
                 if(tool != null) {
-                    Muninn.sound_Ding.seekTo(0); //重至0毫秒
-                    Muninn.sound_Ding.start();
+//                    Muninn.sound_Ding.seekTo(0); //重至0毫秒
+//                    Muninn.sound_Ding.start();
                     director.selectTool(tool);
 
                 }
 
                 break;
-            case PINCH_IN:
+            case PINCH_IN: //放大，兩指拉開
                 director.zoomDraft(0.05f);
                 break;
-            case PINCH_OUT:
+            case PINCH_OUT: //縮小，兩指拉近
                 director.zoomDraft(-0.025f);
                 break;
             case FlING:

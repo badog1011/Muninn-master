@@ -16,8 +16,13 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import studio.bachelor.draft.marker.AnchorMarker;
+import studio.bachelor.draft.marker.ControlMarker;
+import studio.bachelor.draft.marker.LabelMarker;
+import studio.bachelor.draft.marker.LinkMarker;
 import studio.bachelor.draft.marker.Marker;
 import studio.bachelor.draft.marker.MarkerManager;
+import studio.bachelor.draft.marker.MeasureMarker;
 import studio.bachelor.draft.toolbox.Toolbox;
 import studio.bachelor.draft.utility.Position;
 import studio.bachelor.draft.utility.renderer.layer.Layer;
@@ -36,6 +41,8 @@ public class Draft{
     private Path currentPath = null;
     private double width = 1.0;
     private double height = 1.0;
+    public static boolean STYLUS_MODE = false;
+    public static boolean FINGER_MODE = true;
 
     public static Draft getInstance() {
         return instance;
@@ -111,9 +118,50 @@ public class Draft{
     public void moveMarker(Marker marker, Position position) {
         if(marker != null) {
             position = getDraftPosition(position);
+            if (FINGER_MODE) {
+                //手指觸控模式
+                if (marker instanceof ControlMarker) {
+                    //LinkedMarker //include Anchor's and Measure's ControlMarker 更新ControlMarker
+                    Marker fatherMarker = ((ControlMarker) marker).getLinksFatherMarker();
+                    position.set(getAuxilaryPosition(fatherMarker, position, 150/layer.getScale()));
+                } else if (marker instanceof MeasureMarker || marker instanceof AnchorMarker) {
+
+                    position.set(getAuxilaryPosition( ((LinkMarker) marker).getLink(), position, 150/layer.getScale()));
+                } else if (marker instanceof LabelMarker) {
+                    position.set(new Position(position.x - 150/layer.getScale(), position.y - 150/layer.getScale())); //向左上角移動
+                }
+            } else if (STYLUS_MODE) {
+                //觸控筆模式
+            }
+
+            marker.refreshed_tap_position = position; //儲存marker移動的位置(螢幕點選的位置)//?Jonas
             marker.move(position);
         }
     }
+
+    Position getAuxilaryPosition(Marker A, Position holdPosition, double radius) {
+        double angle = 0.0;
+        double theta;
+        double X = holdPosition.x - A.position.x;
+        double Y = holdPosition.y - A.position.y ;
+        theta = Math.atan2(Y, X);
+        angle = Math.toDegrees(theta);
+        if (angle < 0) {
+            angle += 360;
+        }
+
+        if (angle >=270 || angle <= 90) {
+            radius += (50/layer.getScale()); //延長半徑，防止手指肥大遮擋
+        }
+
+        theta = Math.toRadians(angle);
+
+        double newPositionX = holdPosition.x + radius * Math.cos(theta);
+        double newPositionY = holdPosition.y + radius * Math.sin(theta);
+
+        return new Position(newPositionX, newPositionY);
+    }
+
 
     public Position getDraftPosition(Position position) {
         return layer.getPositionOfLayer(position);

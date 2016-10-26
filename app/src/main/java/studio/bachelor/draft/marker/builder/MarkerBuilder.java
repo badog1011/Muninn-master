@@ -53,7 +53,6 @@ public abstract class MarkerBuilder implements Builder {
         createProductIfNull();
         product.position.set(position);
         product.refreshed_tap_position.set(position);
-        product.historyTapPositionsUndo.add(position); //加入historyLinkedList
         return this;
     }
 }

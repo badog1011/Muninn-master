@@ -191,6 +191,8 @@ public class DraftDirector {
     }
 
     public void addMarker(Position position) {
+        Muninn.sound_Ding.seekTo(0);
+        Muninn.sound_Ding.start();
         if (markerType == MeasureMarker.class) {
             addMeasureMarker(position);
         } else if (markerType == AnchorMarker.class) {
@@ -547,10 +549,17 @@ public class DraftDirector {
     }
 
     public void selectTool(Toolbox.Tool tool) {
-        if (tool == Toolbox.Tool.CLEAR_PATH)
+        if (tool == Toolbox.Tool.CLEAR_PATH) {
+            Muninn.sound_Punch.seekTo(0);
+            Muninn.sound_Punch.start();
             draft.clearPaths(); //清除草稿線(PATH_MODE)
-        else
+        }
+        else {
+            Muninn.sound_Ding.seekTo(0); //重至0毫秒
+            Muninn.sound_Ding.start();
             this.tool = tool; //assigned selected component
+        }
+
         switch (tool) {
             case MAKER_TYPE_LINK:
                 this.markerType = MeasureMarker.class;
@@ -810,6 +819,8 @@ public class DraftDirector {
     }
 
     public void holdMarker(Marker marker) { //The Marker will be hold after long pressing
+        Muninn.sound_Ding.seekTo(0); //重至0毫秒
+        Muninn.sound_Ding.start();
         markerHold = marker;
     }
 
@@ -824,7 +835,7 @@ public class DraftDirector {
                 Marker markerHold_linkedMarker = markerHold;
                 DataStepByStep update = new DataStepByStep(fatherMarker, Selectable.CRUD.UPDATE);
                 fatherMarker.historyLayerPositionsUndo.addLast(new Position(fatherMarker.historyLayerPositionsUndo.getLast().x, fatherMarker.historyLayerPositionsUndo.getLast().y)); //把最新位置新增至LinkedList最後
-                markerHold_linkedMarker.refreshed_Layer_position.set(draft.getDraftPosition(new Position(markerHold.refreshed_tap_position.x, markerHold.refreshed_tap_position.y)));
+                markerHold_linkedMarker.refreshed_Layer_position.set(new Position(markerHold.refreshed_tap_position.x, markerHold.refreshed_tap_position.y));
                 markerHold_linkedMarker.historyLayerPositionsUndo.addLast(new Position(markerHold_linkedMarker.refreshed_Layer_position.x, markerHold_linkedMarker.refreshed_Layer_position.y)); //copy original
 
                 if (fatherMarker instanceof AnchorMarker) {
@@ -845,7 +856,7 @@ public class DraftDirector {
                 Marker markerHold_linkedMarker = ((MeasureMarker) markerHold).getLink();
                 DataStepByStep update = new DataStepByStep(markerHold, Selectable.CRUD.UPDATE);
 
-                markerHold.refreshed_Layer_position.set(draft.getDraftPosition(new Position(markerHold.refreshed_tap_position.x, markerHold.refreshed_tap_position.y)));
+                markerHold.refreshed_Layer_position.set(new Position(markerHold.refreshed_tap_position.x, markerHold.refreshed_tap_position.y));
                 markerHold.historyLayerPositionsUndo.addLast(new Position(markerHold.refreshed_Layer_position.x, markerHold.refreshed_Layer_position.y)); //把最新位置新增至LinkedList最後
                 markerHold_linkedMarker.historyLayerPositionsUndo.addLast(new Position(markerHold_linkedMarker.historyLayerPositionsUndo.getLast().x, markerHold_linkedMarker.historyLayerPositionsUndo.getLast().y)); //copy original
 
@@ -865,7 +876,8 @@ public class DraftDirector {
                 Marker markerHold_linkedMarker = AnchorMarker.getInstance().getLink(); //this link was created by marker.
 
                 DataStepByStep update = new DataStepByStep(marker, Selectable.CRUD.UPDATE);
-                marker.refreshed_Layer_position.set(draft.getDraftPosition(new Position(markerHold.refreshed_tap_position.x, markerHold.refreshed_tap_position.y)));
+
+                marker.refreshed_Layer_position.set(new Position(markerHold.refreshed_tap_position.x, markerHold.refreshed_tap_position.y));
                 marker.historyLayerPositionsUndo.addLast(new Position(marker.refreshed_Layer_position.x, marker.refreshed_Layer_position.y)); //把最新位置新增至LinkedList最後
                 markerHold_linkedMarker.historyLayerPositionsUndo.addLast(new Position(markerHold_linkedMarker.historyLayerPositionsUndo.getLast().x, markerHold_linkedMarker.historyLayerPositionsUndo.getLast().y)); //copy original
 
@@ -887,7 +899,7 @@ public class DraftDirector {
                 Log.d(TAG, "#### Release LabelMarker ####");
 
                 DataStepByStep update = new DataStepByStep(markerHold, Selectable.CRUD.UPDATE);
-                markerHold.refreshed_Layer_position.set(draft.getDraftPosition(new Position(markerHold.refreshed_tap_position.x, markerHold.refreshed_tap_position.y)));
+                markerHold.refreshed_Layer_position.set(new Position(markerHold.refreshed_tap_position.x, markerHold.refreshed_tap_position.y));
                 markerHold.historyLayerPositionsUndo.addLast(new Position(markerHold.refreshed_Layer_position.x, markerHold.refreshed_Layer_position.y)); //把最新位置新增至LinkedList最後
                 Log.d(TAG, "historyLayerPositionsUndo Size = " + markerHold.historyLayerPositionsUndo.size());
                 Log.d(TAG, "new Position = " + markerHold.refreshed_Layer_position.x + "," + markerHold.refreshed_Layer_position.y);
@@ -935,10 +947,22 @@ public class DraftDirector {
 
     public void moveHoldMarker(Position position) {
         if (this.markerHold != null) {
+            Log.d(TAG, "#### Moving ControlMarker ####");
+
             draft.moveMarker(markerHold, position);
-            markerHold.refreshed_tap_position = position; //儲存marker移動的位置(螢幕點選的位置)//?Jonas
+//            markerHold.refreshed_tap_position = position; //儲存marker移動的位置(螢幕點選的位置)//?Jonas
         }
     }
+
+    double getAngle(Marker A, Marker B) {
+        double angle = 0.0;
+        double X = A.position.x - B.position.x;
+        double Y = A.position.y - B.position.y;
+        angle = Math.atan(Y/X);
+
+        return angle;
+    }
+
 
     public void zoomDraft(float scale_offset) {
         this.draft.layer.scale(scale_offset);
