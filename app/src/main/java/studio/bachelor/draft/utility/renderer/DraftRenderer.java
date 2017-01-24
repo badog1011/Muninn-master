@@ -54,7 +54,7 @@ public class DraftRenderer implements Renderable {
     public void onDraw(Canvas canvas) {
         Position translate = draft.layer.getTranslate();//?Jonas
         float scale = draft.layer.getScale();
-        canvas.translate((float)translate.x, (float)translate.y);//?Jonas
+        canvas.translate((float)translate.x, (float)translate.y);//位移
         canvas.scale(scale, scale);
         if(birdview != null)
             canvas.drawBitmap(birdview, -birdview.getWidth() / 2, -birdview.getHeight() / 2, paint);

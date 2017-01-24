@@ -35,8 +35,8 @@ public class MotionHandler {
         SINGLE_TAP,
         DOUBLE_TAP,
         MOVE,
-        PINCH_IN,
-        PINCH_OUT,
+        PINCH_IN, //放大，雙指拉開
+        PINCH_OUT, //縮小，雙指拉近
         UP,
         FlING //按下，拋擲的動作
     }

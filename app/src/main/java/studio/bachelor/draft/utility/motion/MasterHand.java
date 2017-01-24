@@ -142,11 +142,12 @@ public class MasterHand implements
     {
         float scale = detector.getScaleFactor();
         Position position = getFocusPosition(detector);
+        Log.d("EVENT", "onScale = " + scale);
         if(scale > 1.2) {
-            postMotion(MotionHandler.Motion.PINCH_IN, position, null);
+            postMotion(MotionHandler.Motion.PINCH_IN, position, null); //放大，雙指拉開
         }
         else if(scale < 0.8) {
-            postMotion(MotionHandler.Motion.PINCH_OUT, position, null);
+            postMotion(MotionHandler.Motion.PINCH_OUT, position, null); //縮小，雙指拉近
         }
         return false;
     }

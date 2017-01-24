@@ -60,5 +60,6 @@
         android:text="Sound Test"
         android:id="@+id/btnSound"
         android:layout_alignParentBottom="true"
+        android:visibility="invisible"
         android:layout_toEndOf="@+id/sign" />
 </RelativeLayout>

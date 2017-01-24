@@ -827,6 +827,8 @@ public class DraftDirector {
     //after releasing the marker by hand
     public void releaseMarker() {
         if (markerHold != null) {
+            Muninn.sound_Ding.seekTo(0);
+            Muninn.sound_Ding.start();
             if (markerHold instanceof ControlMarker) {
                 //LinkedMarker //include Anchor's and Measure's ControlMarker 更新ControlMarker
                 Log.d(TAG, "#### Release ControlMarker ####");
@@ -1098,7 +1100,7 @@ public class DraftDirector {
         if (data_file.exists()) {
             try {
                 Date current_time = new Date();
-                SimpleDateFormat simple_date_format = new SimpleDateFormat("yyyyMMddHHmmss");
+                SimpleDateFormat simple_date_format = new SimpleDateFormat("Draft yyyyMMddHHmmss");
                 String filename = simple_date_format.format(current_time) + ".zip";
                 FileOutputStream destination = new FileOutputStream(new File(Environment.getExternalStorageDirectory(), filename));
                 ZipOutputStream zip_stream = new ZipOutputStream(new BufferedOutputStream(destination));
